@@ -35,6 +35,8 @@
 
 #include <stm32h7/hal.h>
 
+#ifndef STM32H7_SLAVE_BSP
+
 static void stm32h7_output_char(char c)
 {
   stm32h7_uart_polled_write(&STM32H7_PRINTK_INSTANCE.device, c);
@@ -73,3 +75,5 @@ RTEMS_SYSINIT_ITEM(
   RTEMS_SYSINIT_BSP_START,
   RTEMS_SYSINIT_ORDER_LAST_BUT_5
 );
+
+#endif
