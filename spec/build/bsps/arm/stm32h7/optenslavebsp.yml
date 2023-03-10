@@ -1,0 +1,24 @@
+SPDX-License-Identifier: CC-BY-SA-4.0 OR BSD-2-Clause
+actions:
+- get-boolean: null
+- env-assign: null
+- define-condition: null
+build-type: option
+copyrights:
+- Copyright (C) 2023 Karel Gardas <karel@functional.vision>
+default:
+- enabled-by:
+  - arm/precidata-sl-3011
+  value: true
+- enabled-by: true
+  value: false
+description: |
+  Enable when your BSP will be running in a slave mode. Such BSP does not initialize any
+  peripherals but rely purely on firmware/BSP running on another CPU core. The communication
+  between both BSPs/cores is done using shared memory regions and only master BSP is allowed
+  to touch/use peripherals.
+enabled-by: true
+format: '{}'
+links: []
+name: STM32H7_SLAVE_BSP
+type: build
