@@ -40,6 +40,8 @@ links:
   uid: ticker
 - role: build-dependency
   uid: unlimited
+- role: build-dependency
+  uid: md5ram
 type: build
 use-after:
 - rtemstest
