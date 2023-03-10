@@ -52,7 +52,8 @@ const ARMV7M_MPU_Region_config stm32h7_config_mpu_region [] = {
         | ARMV7M_MPU_RASR_AP(0x3)
 #if SDRAM1_NO_CACHE
 #warning "SDRAM 1 without cache, really?"
-        | ARMV7M_MPU_RASR_TEX(0x4)
+        | ARMV7M_MPU_RASR_TEX(0x1)
+        | ARMV7M_MPU_RASR_S
 #else
         | ARMV7M_MPU_RASR_TEX(0x1) | ARMV7M_MPU_RASR_C | ARMV7M_MPU_RASR_B
 #endif
