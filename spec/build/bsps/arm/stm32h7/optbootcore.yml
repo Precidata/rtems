@@ -14,6 +14,7 @@ default:
   - arm/stm32h747i-disco
   - arm/stm32h757i-eval
   - arm/nucleo-h755zi
+  - arm/precidata-sl-3011
   value: CORE_CM7
 - enabled-by:
   - arm/stm32h747i-disco-m4

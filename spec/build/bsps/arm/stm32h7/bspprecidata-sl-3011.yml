@@ -1,0 +1,23 @@
+SPDX-License-Identifier: CC-BY-SA-4.0 OR BSD-2-Clause
+arch: arm
+bsp: precidata-sl-3011
+build-type: bsp
+cflags: []
+copyrights:
+- Copyright (C) 2023 Karel Gardas <karel@functional.vision>
+cppflags: []
+enabled-by: true
+family: stm32h7
+includes: []
+install: []
+links:
+- role: build-dependency
+  uid: grp
+- role: build-dependency
+  uid: ../../tstsmallmem
+source:
+- bsps/arm/stm32h7/boards/precidata/sl-3011/stm32h7-bspstarthooks.c
+- bsps/arm/stm32h7/boards/precidata/sl-3011/system_stm32h7xx.c
+- bsps/arm/shared/cache/cache-v7m.c
+- bsps/arm/stm32h7/amp/virt_console.c
+type: build

@@ -25,6 +25,7 @@ default:
 - enabled-by:
   - arm/stm32h747i-disco
   - arm/stm32h747i-disco-m4
+  - arm/precidata-sl-3011
   value: STM32H747xx
 - enabled-by:
   - arm/stm32h750b-dk
