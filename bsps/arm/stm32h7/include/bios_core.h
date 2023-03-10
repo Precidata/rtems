@@ -216,6 +216,7 @@ bios_bqe_write(bios_byte_queue *bq, const void *buf, unsigned n)
 		bq->buf[i++ & mask] = *p++;
 	asm volatile ("dmb" : : : "memory");
 	bq->tail = i;
+        asm volatile ("dmb" : : : "memory");
 	return (n);
 }
 
