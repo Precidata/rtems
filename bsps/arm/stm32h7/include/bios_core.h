@@ -1,5 +1,5 @@
 /*
- * $Id: bios_core.h 3256 2023-03-09 07:29:10Z cedric $
+ * $Id: bios_core.h 3276 2023-03-10 16:40:04Z cedric $
  *
  * Copyright (C) 2023 - 2023 Cedric Berger <cedric@berger.to>
  *
@@ -49,9 +49,6 @@ extern "C" {
  * BIOS root structure is located at beginning of SRAM4
  */
 #define BIOS		((struct bios_root *)0x38000000)
-
-
-
 
 /*
  * LED colors
@@ -138,18 +135,40 @@ typedef struct bios_virtual_tty {
 
 /*
  * Root BIOS structure, located at the beginning of SRAM4
+ *
+ * The devid must be written by the CM7 ASAP because the
+ * CM4 has no access to the device electronic signature
+ * memory map located at 0x1ff1e800. See bios_init_devid()
  */
 typedef struct bios_root {
 	bios_core_info		cm4;		/* CM4 => CM7 */
 	bios_core_info		cm7;		/* CM7 => CM4 */
-	uint8_t                 iled[4];	/* CM7 => CM4 */
+	uint8_t			iled[4];	/* CM7 => CM4 */
 	bios_byte_queue		*console;	/* initialized by CM4 */
-	uint32_t		 nvtty;		/* number of virtual ttys */
+	uint32_t			 nvtty;		/* number of virtual ttys */
 	bios_virtual_tty	*vttys;		/* list of virtual ttys */
+	uint32_t			 devid[3];	/* device id  CM7 => CM4 */
 } bios_root;
 
 /********** functions **********/
 
+/*
+ * Initialize the devid block. Must be done on CM7, HardFault on CM4.
+ *
+ * This function will by called before RTOS or application code if the
+ * if the CM7 core is started up in the flash BIOS.
+ */
+BIOS_INLINE void
+bios_init_devid(void)
+{
+	BIOS->devid[0] = *(uint32_t *)0x1ff1e800;
+	BIOS->devid[1] = *(uint32_t *)0x1ff1e804;
+	BIOS->devid[2] = *(uint32_t *)0x1ff1e808;
+}
+
+/*
+ * Make the INST LED to alternate over the 4 given colors, 250ms /B color.
+ */
 BIOS_INLINE void
 bios_inst_led_blink(enum bios_led_color c1, enum bios_led_color c2,
 	enum bios_led_color c3, enum bios_led_color c4)
@@ -160,12 +179,20 @@ bios_inst_led_blink(enum bios_led_color c1, enum bios_led_color c2,
 	BIOS->iled[3] = (uint8_t)c4;
 }
 
+/*
+ * Make the INST LED to display a solid color.
+ */
 BIOS_INLINE void
 bios_inst_led_solid(enum bios_led_color c)
 {
 	bios_inst_led_blink(c, c, c, c);
 }
 
+/*
+ * Write up to n bytes to the given byte queue.
+ * Return -EAGAIN if the queue is full, and may to partial writes.
+ * Error code (errno) is returned as a negative integer.
+ */
 BIOS_INLINE int
 bios_bqe_write(bios_byte_queue *bq, const void *buf, unsigned n)
 {
@@ -189,10 +216,14 @@ bios_bqe_write(bios_byte_queue *bq, const void *buf, unsigned n)
 		bq->buf[i++ & mask] = *p++;
 	asm volatile ("dmb" : : : "memory");
 	bq->tail = i;
-        asm volatile ("dmb" : : : "memory");
 	return (n);
 }
 
+/*
+ * Read up to n bytes from the given byte queue.
+ * Return -EAGAIN if the queue is empty, and may to partial reads.
+ * Error code (errno) is returned as a negative integer.
+ */
 BIOS_INLINE int
 bios_bqe_read(bios_byte_queue *bq, void *buf, unsigned n)
 {
@@ -216,12 +247,18 @@ bios_bqe_read(bios_byte_queue *bq, void *buf, unsigned n)
 	return (n);
 }
 
+/*
+ * Writes to the engineering debug console.
+ */
 BIOS_INLINE int
 bios_console_write(const void *buf, unsigned n)
 {
 	return (bios_bqe_write(BIOS->console, buf, n));
 }
 
+/*
+ * Writes to one of the virtual tty channels.
+ */
 BIOS_INLINE int
 bios_vtty_write(unsigned tty, const void *buf, unsigned n)
 {
@@ -230,6 +267,9 @@ bios_vtty_write(unsigned tty, const void *buf, unsigned n)
 	return (bios_bqe_write(BIOS->vttys[tty].outq, buf, n));
 }
 
+/*
+ * Reads from one of the virtual tty channels.
+ */
 BIOS_INLINE int
 bios_vtty_read(unsigned tty, void *buf, unsigned n)
 {
@@ -238,6 +278,9 @@ bios_vtty_read(unsigned tty, void *buf, unsigned n)
 	return (bios_bqe_read(BIOS->vttys[tty].inq, buf, n));
 }
 
+/*
+ * Returns true if the virtual tty channel is in use by a client.
+ */
 BIOS_INLINE int
 bios_vtty_is_connected(unsigned tty)
 {
