@@ -64,7 +64,7 @@ static rtems_task Init(
       MD5Init(&ctx);
       pass_start = HAL_GetTick();
       for (size_t i = 0; i < 32 * 1024; i++) {
-          MD5Update(&ctx, base + i, 1024);
+          MD5Update(&ctx, base + i * 1024, 1024);
       }
       pass_end = HAL_GetTick();
       MD5Final(digest, &ctx);
