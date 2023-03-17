@@ -40,6 +40,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#ifndef STM32H7_SLAVE_BSP
+
 static stm32h7_uart_context * const stm32h7_uart_instances[] = {
 #ifdef STM32H7_CONSOLE_ENABLE_USART1
   &stm32h7_usart1_instance,
@@ -299,3 +301,5 @@ rtems_status_code console_initialize(
 
   return RTEMS_SUCCESSFUL;
 }
+
+#endif
