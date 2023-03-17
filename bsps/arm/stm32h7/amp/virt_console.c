@@ -26,6 +26,10 @@
 
 #define MAX_NUMBER_OF_VTTY 10
 
+void fwlog(const char *s) {
+    bios_console_write(s, strlen(s));
+}
+
 static void
 virt_console_putchar(char c)
 {
@@ -39,46 +43,6 @@ virt_console_putchar(char c)
             return;
         }
     }
-/*
-    int rv;
-    while ((rv = bios_console_write(&c, 1)) == -(EAGAIN)) {
-    }
-*/
-/*
-    while (bios_console_write(&c, 1) == -(EAGAIN)) {
-    }
-*/
-/*
-    while (bios_console_write(&c, 1) == -(EAGAIN))
-        ;
-*/
-/*
-    while (bios_console_write(&c, 1) == -EAGAIN)
-        ;
-*/
-}
-
-static void virt_console_write(
-  rtems_termios_device_context *base,
-  const char *buf,
-  size_t len
-)
-{
-  size_t i;
-
-  for (i = 0; i < len; ++i) {
-    virt_console_putchar(buf[i]);
-  }
-}
-
-static char virt_console_getchar(void)
-{
-    return -1;
-}
-
-static int virt_console_read(rtems_termios_device_context *base)
-{
-    return virt_console_getchar();
 }
 
 typedef struct {
@@ -113,8 +77,21 @@ static void virt_tty_write(
 static int virt_tty_read(rtems_termios_device_context *base)
 {
     virt_uart_context* ctx = virt_uart_get_context(base);
-    int c;
-    bios_vtty_read(ctx->vtty_no, &c, 1);
+    /* need to initialize character holder to 0 and not to -1
+     * since if we do -1, then assigning to it one character blow
+     * would still result in c < 0 which would break termios processing
+     */
+    int c = 0;
+    for (;;) {
+        int rv = bios_vtty_read(ctx->vtty_no, &c, 1);
+        if (rv == (-EAGAIN)) {
+            continue;
+        }
+        else {
+            return c;
+        }
+    }
+    /* unreachable code */
     return c;
 }
 
@@ -122,7 +99,7 @@ static void virt_output_char_init(void)
 {
   BSP_output_char = virt_console_putchar;
 }
-/*
+
 static const rtems_termios_device_handler virt_uart_handler = {
   .first_open = NULL,
   .last_close = NULL,
@@ -138,7 +115,7 @@ rtems_status_code console_initialize(
   void *arg
 )
 {
-    printk("console_initialize...\n");
+    fwlog("console_initialize...\n");
   size_t i;
   bios_inst_led_solid(BIOS_LED_GREEN);
 
@@ -152,7 +129,8 @@ rtems_status_code console_initialize(
     ctx->vtty_no = i;
 
     snprintf(path, sizeof(path), "/dev/ttyS%" PRIu8, ctx->vtty_no);
-
+    fwlog(path);
+    fwlog("\n");
     rtems_termios_device_install(
       path,
       &virt_uart_handler,
@@ -163,36 +141,6 @@ rtems_status_code console_initialize(
   bios_inst_led_solid(BIOS_LED_YELLOW);
   link("/dev/ttyS0", CONSOLE_DEVICE_NAME);
   bios_inst_led_solid(BIOS_LED_BLUE);
-  return RTEMS_SUCCESSFUL;
-}
-*/
-
-static const rtems_termios_device_handler stm32h7_virt_uart_handler = {
-  .first_open = NULL,
-  .last_close = NULL,
-  .write = virt_console_write,
-  .set_attributes = NULL,
-  .poll_read = virt_console_read,
-  .mode = TERMIOS_POLLED
-};
-
-rtems_status_code console_initialize(
-  rtems_device_major_number major,
-  rtems_device_minor_number minor,
-  void *arg
-)
-{
-  rtems_termios_initialize();
-
-  rtems_termios_device_install(
-      "/dev/ttyS0",
-      &stm32h7_virt_uart_handler,
-      NULL,
-      NULL
-    );
-
-  link("/dev/ttyS0", CONSOLE_DEVICE_NAME);
-
   return RTEMS_SUCCESSFUL;
 }
 
