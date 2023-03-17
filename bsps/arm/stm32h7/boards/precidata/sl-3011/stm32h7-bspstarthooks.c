@@ -62,7 +62,8 @@ void bsp_start_hook_0(void)
   if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
     SCB_EnableDCache();
   }
-  _ARMV7M_MPU_Setup(stm32h7_config_mpu_region, stm32h7_config_mpu_region_count);
+  /* not using ARMV7M_MPU_CTRL_DEFAULT here to avoid ARMV7M_MPU_CTRL_PRIVDEFENA */
+  _ARMV7M_MPU_Setup(ARMV7M_MPU_CTRL_ENABLE, stm32h7_config_mpu_region, stm32h7_config_mpu_region_count);
 #endif
 }
 
