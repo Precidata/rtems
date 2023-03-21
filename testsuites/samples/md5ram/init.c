@@ -35,6 +35,8 @@
 
 #include <md5.h>
 
+#include <stm32h7/memory.h>
+
 const char rtems_test_name[] = "HELLO WORLD";
 
 uint32_t HAL_GetTick(void);
@@ -45,12 +47,16 @@ static rtems_task Init(
   rtems_task_argument ignored
 )
 {
-    void* base = (void*)0x70000000;
+//    void* base = (void*)0x70000000;
+  //void* base = (void*)stm32h7_memory_sram_axi_begin;
+  //uint32_t sz = (stm32h7_memory_sram_axi_end - stm32h7_memory_sram_axi_begin) / 1024;
+  void* base = (void*)stm32h7_memory_sdram_1_begin;
+  uint32_t sz = (stm32h7_memory_sdram_1_end - stm32h7_memory_sdram_1_begin) / 1024;
   rtems_print_printer_fprintf_putc(&rtems_test_printer);
   TEST_BEGIN();
   printf( "MD5 RAM Tester.\n" );
   printf( "SystemCoreClock: %d\n", stm32h7_systick_frequency());
-
+  printf( "Testing RAM starting @ %p with size: %x\n", base, sz * 1024);
   MD5_CTX ctx;
   unsigned char digest[16];
   unsigned char prev[16];
@@ -59,16 +65,17 @@ static rtems_task Init(
   uint32_t pass_end;
   uint32_t test_start;
   uint32_t test_end;
+
   test_start = HAL_GetTick();
-  for (size_t k = 0; k < 100; k++) {
+  for (size_t k = 0; k < 1000000; k++) {
       MD5Init(&ctx);
       pass_start = HAL_GetTick();
-      for (size_t i = 0; i < 32 * 1024; i++) {
+      for (size_t i = 0; i < sz; i++) {
           MD5Update(&ctx, base + i * 1024, 1024);
       }
       pass_end = HAL_GetTick();
       MD5Final(digest, &ctx);
-      printf("\r%d. pass, %d ms, md5: ", (pass + 1), (pass_end - pass_start));
+      printf("\r%d loop, %d. pass, %d ms, md5: ", k, (pass + 1), (pass_end - pass_start));
       for (int i = 0; i < 16; i++) {
           printf("%02x", digest[i]);
       }
@@ -83,6 +90,7 @@ static rtems_task Init(
               for (int i = 0; i < 16; i++) {
                   printf("%02x", prev[i]);
               }
+              printf("\n");
               memcpy(prev, (const char*)digest, 16);
               pass = 0;
           }
