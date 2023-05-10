@@ -22,4 +22,5 @@ source:
 - bsps/arm/stm32h7/boards/stm/stm32h747i-disco/stm32h7-config-per.c
 - bsps/arm/stm32h7/boards/stm/stm32h747i-disco/system_stm32h7xx.c
 - bsps/arm/shared/cache/cache-v7m.c
+- bsps/shared/start/bspfatal-default.c
 type: build
