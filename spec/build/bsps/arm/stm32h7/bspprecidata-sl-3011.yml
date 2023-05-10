@@ -17,7 +17,7 @@ links:
 - role: build-dependency
   uid: grp
 - role: build-dependency
-  uid: ../../tstsmallmem
+  uid: tststm32h757i-eval
 source:
 - bsps/arm/stm32h7/boards/precidata/sl-3011/stm32h7-bspstarthooks.c
 - bsps/arm/stm32h7/boards/precidata/sl-3011/system_stm32h7xx.c
