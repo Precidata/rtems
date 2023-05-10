@@ -34,6 +34,8 @@
 #include <rtems/score/threadimpl.h>
 #include <inttypes.h>
 
+#include <bios_core.h>
+
 void bsp_fatal_extension(
   rtems_fatal_source source,
   bool always_set_to_false,
@@ -44,6 +46,9 @@ void bsp_fatal_extension(
     Thread_Control *executing;
     const char* TYPE = "*** FATAL ***";
     const char* type = "fatal";
+    /* we start with the code variable value and later changed based on
+       failure properties */
+    int retval = code;
 
     if ( source == RTEMS_FATAL_SOURCE_EXIT ) {
       if ( code == 0 ) {
@@ -83,11 +88,13 @@ void bsp_fatal_extension(
   #if (BSP_PRINT_EXCEPTION_CONTEXT) || BSP_VERBOSE_FATAL_EXTENSION
     if ( source == RTEMS_FATAL_SOURCE_EXCEPTION ) {
       rtems_exception_frame_print( (const rtems_exception_frame *) code );
+      retval = -1;
     }
   #endif
 
   #if BSP_VERBOSE_FATAL_EXTENSION
     else if ( source == INTERNAL_ERROR_CORE ) {
+      retval = -2;
       printk(
         "%s code: %ju (%s)\n",
         type,
@@ -96,6 +103,7 @@ void bsp_fatal_extension(
       );
     #if defined(HEAP_PROTECTION)
     } else if ( source == RTEMS_FATAL_SOURCE_HEAP ) {
+      retval = -3;
       Heap_Error_context *error_context = (Heap_Error_context*) code;
       const char* reasons[] = {
         "HEAP_ERROR_BROKEN_PROTECTOR",
@@ -131,6 +139,7 @@ void bsp_fatal_extension(
       }
     #endif
     } else if ( source != RTEMS_FATAL_SOURCE_EXIT || code != 0 ) {
+      retval = -4;
       printk(
         "%s code: %ju (0x%08jx)\n",
         type,
@@ -174,12 +183,7 @@ void bsp_fatal_extension(
 
     printk("\n");
   #endif
-
-  /*
-   *  Check both conditions -- if you want to ask for reboot, then
-   *  you must have meant to reset the board.
-   */
-  #if (BSP_PRESS_KEY_FOR_RESET) || (BSP_RESET_BOARD_AT_EXIT)
-    bsp_reset();
-  #endif
+  printk("Exiting to FW.\n");
+  BIOS->exit(retval);
+  printk("ERROR: why BIOS->exit(...) returns?\n");
 }
