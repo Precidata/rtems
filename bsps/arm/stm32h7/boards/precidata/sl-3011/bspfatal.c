@@ -34,6 +34,9 @@
 #include <rtems/score/threadimpl.h>
 #include <inttypes.h>
 
+#include <stm32h7/mpu-config.h>
+#include <rtems/score/armv7m.h>
+
 #include <bios_core.h>
 
 void bsp_fatal_extension(
@@ -49,12 +52,13 @@ void bsp_fatal_extension(
     /* we start with the code variable value and later changed based on
        failure properties */
     int retval = code;
-
+    bios_core_state state = BIOS_CORE_SUCCESS;
     if ( source == RTEMS_FATAL_SOURCE_EXIT ) {
       if ( code == 0 ) {
         TYPE = "[ RTEMS shutdown ]";
       } else {
         TYPE = "*** EXIT STATUS NOT ZERO ***";
+        state = BIOS_CORE_FAILURE;
       }
       type = "exit";
     }
@@ -89,12 +93,14 @@ void bsp_fatal_extension(
     if ( source == RTEMS_FATAL_SOURCE_EXCEPTION ) {
       rtems_exception_frame_print( (const rtems_exception_frame *) code );
       retval = -1;
+      state = BIOS_CORE_CRASHED;
     }
   #endif
 
   #if BSP_VERBOSE_FATAL_EXTENSION
     else if ( source == INTERNAL_ERROR_CORE ) {
       retval = -2;
+      state = BIOS_CORE_CRASHED;
       printk(
         "%s code: %ju (%s)\n",
         type,
@@ -104,6 +110,7 @@ void bsp_fatal_extension(
     #if defined(HEAP_PROTECTION)
     } else if ( source == RTEMS_FATAL_SOURCE_HEAP ) {
       retval = -3;
+      state = BIOS_CORE_CRASHED;
       Heap_Error_context *error_context = (Heap_Error_context*) code;
       const char* reasons[] = {
         "HEAP_ERROR_BROKEN_PROTECTOR",
@@ -140,6 +147,7 @@ void bsp_fatal_extension(
     #endif
     } else if ( source != RTEMS_FATAL_SOURCE_EXIT || code != 0 ) {
       retval = -4;
+      state = BIOS_CORE_CRASHED;
       printk(
         "%s code: %ju (0x%08jx)\n",
         type,
@@ -183,6 +191,10 @@ void bsp_fatal_extension(
 
     printk("\n");
   #endif
+  printk("Disable MPU.\n");
+  _ARMV7M_MPU_Setup(0, NULL, 0);
+  printk("Changing CM7 state to: %d.\n", state);
+  bios_set_state(state);
   printk("Exiting to FW.\n");
   BIOS->exit(retval);
   printk("ERROR: why BIOS->exit(...) returns?\n");
