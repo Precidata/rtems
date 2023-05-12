@@ -98,6 +98,16 @@ const ARMV7M_MPU_Region_config stm32h7_config_mpu_region [] = {
 #if STM32H7_SLAVE_BSP
 #warning "SLAVE BSP welcome! :-)"
     , {
+    /* DTCM is for app stack */
+     /*  normal  | not shareable | RW         | RW           | NO */
+      .begin = stm32h7_memory_dtcm_begin,
+      .end = stm32h7_memory_dtcm_end,
+      .rasr = ARMV7M_MPU_RASR_XN
+        | ARMV7M_MPU_RASR_AP(0x3)
+        | ARMV7M_MPU_RASR_TEX(0x1) | ARMV7M_MPU_RASR_C | ARMV7M_MPU_RASR_B
+        | ARMV7M_MPU_RASR_ENABLE,
+    }
+    , {
 
      /* protect SRAM 1 and 2 from modification from the BSP side.
         Those are dedicated to the M4 running the master firmware */
