@@ -25,6 +25,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <bspopts.h>
+
 #include <stm32h7/hal.h>
 
 #include <rtems.h>
@@ -33,6 +35,8 @@
 #include <sys/param.h>
 #include <unistd.h>
 #include <string.h>
+
+#if !defined(STM32H7_SLAVE_BSP)
 
 static RNG_HandleTypeDef stm32h7_rng_instance = {
   .Instance = RNG,
@@ -78,3 +82,5 @@ RTEMS_SYSINIT_ITEM(
   RTEMS_SYSINIT_DEVICE_DRIVERS,
   RTEMS_SYSINIT_ORDER_LAST_BUT_5
 );
+
+#endif /* STM32H7_SLAVE_BSP */
