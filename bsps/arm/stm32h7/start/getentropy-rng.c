@@ -83,4 +83,25 @@ RTEMS_SYSINIT_ITEM(
   RTEMS_SYSINIT_ORDER_LAST_BUT_5
 );
 
+#else /* STM32H7_SLAVE_BSP */
+
+static uint32_t rnd_val = 0;
+
+int getentropy(void *ptr, size_t n)
+{
+  while (n > 0) {
+    uint32_t random;
+    size_t copy;
+
+    random = _CPU_Counter_read() + rnd_val++;
+
+    copy = MIN(sizeof(random), n);
+    ptr = memcpy(ptr, &random, copy);
+    n -= copy;
+    ptr += copy;
+  }
+
+  return 0;
+}
+
 #endif /* STM32H7_SLAVE_BSP */
