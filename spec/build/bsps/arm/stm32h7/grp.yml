@@ -143,6 +143,8 @@ links:
 - role: build-dependency
   uid: linkcmdsaxi
 - role: build-dependency
+  uid: linkcmdssl3011
+- role: build-dependency
   uid: ../../bspopts
 type: build
 use-after: []
