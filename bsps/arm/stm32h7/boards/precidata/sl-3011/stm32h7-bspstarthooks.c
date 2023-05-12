@@ -40,12 +40,25 @@
 
 #include <bios_core.h>
 
+uint32_t slave_wait_cycles = 0;
+
 void bsp_start_hook_0(void)
 {
-    BIOS->cm7.magic = 0xfacade01;
-    BIOS->cm7.state = BIOS_CORE_RUNNING;
-    BIOS->cm7.updates++;
-
+    bool cm4_is_running = false;
+    do {
+        __DSB();
+        if (BIOS->cm4.magic == 0xfacade01
+            && BIOS->cm4.state != BIOS_CORE_INIT
+            && BIOS->cm4.updates > 0) {
+            cm4_is_running = true;
+        }
+        else {
+            bios_dmb_delay();
+            slave_wait_cycles++;
+        }
+        __DSB();
+    } while (!cm4_is_running);
+    bios_set_state(BIOS_CORE_RUNNING);
   bios_inst_led_solid(BIOS_LED_WHITE);
   bios_console_write("Hello\n", 6);
   bios_vtty_write(0, "Hello\r\n", 7);
