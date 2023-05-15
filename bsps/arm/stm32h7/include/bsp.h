@@ -66,6 +66,21 @@ void stm32h7_init_qspi(void);
 
 /** @} */
 
+#ifdef STM32H7_USE_DTCM_FOR_APP_STACK
+
+void  stm32h7_stack_allocator_init(size_t);
+void* stm32h7_stack_allocate(size_t);
+void* stm32h7_stack_idle_allocate(uint32_t, size_t*);
+void  stm32h7_stack_deallocate(void*);
+
+#define CONFIGURE_TASK_STACK_ALLOCATOR_AVOIDS_WORK_SPACE 1
+#define CONFIGURE_TASK_STACK_ALLOCATOR_INIT stm32h7_stack_allocator_init
+#define CONFIGURE_TASK_STACK_ALLOCATOR stm32h7_stack_allocate
+#define CONFIGURE_TASK_STACK_DEALLOCATOR stm32h7_stack_deallocate
+#define CONFIGURE_TASK_STACK_ALLOCATOR_FOR_IDLE stm32h7_stack_idle_allocate
+
+#endif /* STM32H7_USE_DTCM_FOR_APP_STACK */
+
 #ifdef __cplusplus
 }
 #endif
