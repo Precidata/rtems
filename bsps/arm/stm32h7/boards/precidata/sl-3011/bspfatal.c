@@ -37,7 +37,10 @@
 #include <stm32h7/mpu-config.h>
 #include <rtems/score/armv7m.h>
 
+#include <stm32h7/hal.h>
+
 #include <bios_core.h>
+
 
 void bsp_fatal_extension(
   rtems_fatal_source source,
@@ -193,6 +196,11 @@ void bsp_fatal_extension(
   #endif
   printk("Disable MPU.\n");
   _ARMV7M_MPU_Setup(0, NULL, 0);
+  printk("Invalidate and disable I/D caches.\n");
+  SCB_InvalidateICache();
+  SCB_DisableICache();
+  SCB_CleanDCache();
+  SCB_DisableDCache();
   printk("Changing CM7 state to: %d.\n", state);
   bios_set_state(state);
   printk("Exiting to FW.\n");
