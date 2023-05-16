@@ -10,7 +10,6 @@ default:
 - enabled-by:
   - arm/stm32h747i-disco-m4
   - arm/stm32h757i-eval-m4
-  - arm/precidata-sl-3011
   value: false
 - enabled-by: true
   value: true
