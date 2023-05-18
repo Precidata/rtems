@@ -263,7 +263,12 @@ SECTIONS {
 		    + ALIGN (. - bsp_section_rodata_begin,
 		    1 << LOG2CEIL (. - bsp_section_rodata_begin)) : .;
 
-		bsp_section_rodata_end = .;
+		. = DEFINED (bsp_align_merged_text_and_rodata_end_to_power_of_2) ?
+		    bsp_section_start_begin
+		    + ALIGN (. - bsp_section_start_begin,
+		    1 << LOG2CEIL (. - bsp_section_start_begin)) : .;
+
+                bsp_section_rodata_end = .;
 	} > REGION_RODATA AT > REGION_RODATA_LOAD
 	bsp_section_rodata_size = bsp_section_rodata_end - bsp_section_rodata_begin;
 	bsp_section_rodata_load_begin = LOADADDR (.rodata);

@@ -27,6 +27,8 @@ links:
 - role: build-dependency
   uid: optenmpualign
 - role: build-dependency
+  uid: optenmpualignmerge
+- role: build-dependency
   uid: ../optmpuctrl
 - role: build-dependency
   uid: optenuart4

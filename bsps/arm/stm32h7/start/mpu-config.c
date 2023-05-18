@@ -66,7 +66,10 @@ const ARMV7M_MPU_Region_config stm32h7_config_mpu_region [] = {
         | ARMV7M_MPU_RASR_AP(0x3)
         | ARMV7M_MPU_RASR_TEX(0x1) | ARMV7M_MPU_RASR_C | ARMV7M_MPU_RASR_B
         | ARMV7M_MPU_RASR_ENABLE,
-    }, {
+    },
+#if defined(STM32H7_ENABLE_MPU_ALIGNMENT)
+#warning "MPU alignment!!!"
+    {
      /* normal  | not shareable | RO         | no access    | YES */
       .begin = bsp_section_start_begin,
       .end = bsp_section_text_end,
@@ -81,7 +84,20 @@ const ARMV7M_MPU_Region_config stm32h7_config_mpu_region [] = {
         | ARMV7M_MPU_RASR_AP(0x5)
         | ARMV7M_MPU_RASR_TEX(0x1) | ARMV7M_MPU_RASR_C | ARMV7M_MPU_RASR_B
         | ARMV7M_MPU_RASR_ENABLE,
-    }, {
+    },
+#endif
+#if defined(STM32H7_ENABLE_MPU_ALIGNMENT_MERGE)
+#warning "MPU MERGE alignment!"
+    {
+     /* normal  | not shareable | RO         | no access    | YES */
+      .begin = bsp_section_start_begin,
+      .end = bsp_section_rodata_end,
+      .rasr = ARMV7M_MPU_RASR_AP(0x5)
+        | ARMV7M_MPU_RASR_TEX(0x1) | ARMV7M_MPU_RASR_C | ARMV7M_MPU_RASR_B
+        | ARMV7M_MPU_RASR_ENABLE,
+    },
+#endif
+    {
      /* device  | not shareable | RW         | RW           | NO */
       .begin = bsp_section_nocache_begin,
       .end = bsp_section_nocachenoload_end,
