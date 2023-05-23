@@ -78,6 +78,7 @@ static const stm32h7_gpio_config gpiod = {
 void
 HAL_SD_MspInit(SD_HandleTypeDef *hsd)
 {
+#ifndef STM32H7_SLAVE_BSP
   stm32h7_clk_enable(STM32H7_MODULE_SDMMC1);
   stm32h7_gpio_init(&gpiob);
   stm32h7_gpio_init(&gpioc_af12);
@@ -85,4 +86,5 @@ HAL_SD_MspInit(SD_HandleTypeDef *hsd)
   stm32h7_gpio_init(&gpiod);
   __HAL_RCC_SDMMC1_FORCE_RESET();
   __HAL_RCC_SDMMC1_RELEASE_RESET();
+#endif /* STM32H7_SLAVE_BSP */
 }
