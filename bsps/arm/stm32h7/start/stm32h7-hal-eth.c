@@ -86,6 +86,7 @@ static const stm32h7_gpio_config gpiob = {
 void
 HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 {
+#ifndef STM32H7_SLAVE_BSP
   stm32h7_clk_enable(STM32H7_MODULE_ETH1MAC);
   stm32h7_clk_enable(STM32H7_MODULE_ETH1TX);
   stm32h7_clk_enable(STM32H7_MODULE_ETH1RX);
@@ -95,6 +96,7 @@ HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 #ifdef STM32H7_ETH_GPIOB_PINS
   stm32h7_gpio_init(&gpiob);
 #endif
+#endif /* STM32H7_SLAVE_BSP */
 }
 
 #endif
