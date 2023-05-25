@@ -324,6 +324,10 @@ SECTIONS {
 	.ip6bss : ALIGN_WITH_INPUT {
 		bsp_section_ip6bss_begin = .;
 		*(.bss.ip6qb*)
+                *(.bss.mDNSStorage*)
+                *(.bss.tcp_debug*)
+                *(.bss.buffer_control*)
+                *(.bss.ipq*)
 		bsp_section_ip6bss_end = .;
 	} > REGION_WORK AT > REGION_WORK
 	bsp_section_ip6bss_size = bsp_section_ip6bss_end - bsp_section_ip6bss_begin;
