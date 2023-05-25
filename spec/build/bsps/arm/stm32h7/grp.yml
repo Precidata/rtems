@@ -21,8 +21,6 @@ links:
 - role: build-dependency
   uid: obj
 - role: build-dependency
-  uid: optendtcmappstack
-- role: build-dependency
   uid: optappstack
 - role: build-dependency
   uid: ../../objmem
