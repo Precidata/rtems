@@ -348,7 +348,7 @@ SECTIONS {
 		bsp_section_noinit_begin = .;
 		*(SORT_BY_NAME (SORT_BY_ALIGNMENT (.noinit*)))
 		bsp_section_noinit_end = .;
-	} > REGION_WORK AT > REGION_WORK
+	} > REGION_DATA AT > REGION_DATA
 	bsp_section_noinit_size = bsp_section_noinit_end - bsp_section_noinit_begin;
 
 	.work : ALIGN_WITH_INPUT {
