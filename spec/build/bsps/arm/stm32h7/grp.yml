@@ -23,6 +23,8 @@ links:
 - role: build-dependency
   uid: optendtcmappstack
 - role: build-dependency
+  uid: optappstack
+- role: build-dependency
   uid: ../../objmem
 - role: build-dependency
   uid: optenmpualign
