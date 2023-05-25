@@ -7,6 +7,9 @@ build-type: option
 copyrights:
 - Copyright (C) 2020 embedded brains GmbH (http://www.embedded-brains.de)
 default:
+- enabled-by:
+  - arm/precidata-sl-3011
+  value: true
 - enabled-by: true
   value: false
 description: |
