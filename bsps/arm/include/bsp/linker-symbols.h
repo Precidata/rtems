@@ -105,6 +105,10 @@ LINKER_SYMBOL(bsp_section_bss_begin)
 LINKER_SYMBOL(bsp_section_bss_end)
 LINKER_SYMBOL(bsp_section_bss_size)
 
+LINKER_SYMBOL(bsp_section_ip6bss_begin)
+LINKER_SYMBOL(bsp_section_ip6bss_end)
+LINKER_SYMBOL(bsp_section_ip6bss_size)
+
 LINKER_SYMBOL(bsp_section_rtemsstack_begin)
 LINKER_SYMBOL(bsp_section_rtemsstack_end)
 LINKER_SYMBOL(bsp_section_rtemsstack_size)
