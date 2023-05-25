@@ -18,7 +18,7 @@ default:
   value: linkcmds.flash
 - enabled-by:
   - arm/precidata-sl-3011
-  value: linkcmds.sl3011
+  value: linkcmds.sl3011v2
 - enabled-by: true
   value: linkcmds.sdram
 description: |
