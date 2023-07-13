@@ -42,8 +42,24 @@
 
 uint32_t slave_wait_cycles = 0;
 
+static void MinimalSystemInit (void)
+{
+  /* FPU settings ------------------------------------------------------------*/
+#if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+  SCB->CPACR |= ((3UL << (10*2))|(3UL << (11*2)));  /* set CP10 and CP11 Full Access */
+#endif
+
+  /*SEVONPEND enabled so that an interrupt coming from the CPU(n) interrupt signal is
+    detectable by the CPU after a WFI/WFE instruction.*/
+  SCB->SCR |= SCB_SCR_SEVONPEND_Msk;
+
+  SCB->VTOR = (uint32_t) bsp_start_vector_table_begin;
+}
+
 void bsp_start_hook_0(void)
 {
+    MinimalSystemInit();
+    HAL_Init();
     bool cm4_is_running = false;
     do {
         __DSB();
