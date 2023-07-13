@@ -118,7 +118,8 @@ const ARMV7M_MPU_Region_config stm32h7_config_mpu_region [] = {
 #if STM32H7_SLAVE_BSP
 #warning "SLAVE BSP welcome! :-)"
     , {
-    /* DTCM is for app stack */
+     /* DTCM may be used for the application stack */
+
      /*  normal  | not shareable | RW         | RW           | NO */
       .begin = stm32h7_memory_dtcm_begin,
       .end = stm32h7_memory_dtcm_end,
