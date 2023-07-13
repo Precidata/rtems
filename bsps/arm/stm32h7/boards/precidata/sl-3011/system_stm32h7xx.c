@@ -210,7 +210,7 @@ void SystemInit (void)
      detectable by the CPU after a WFI/WFE instruction.*/ 
  SCB->SCR |= SCB_SCR_SEVONPEND_Msk;
 
-#ifdef CORE_CM7 
+#if defined(CORE_CM7) || (defined (__rtems__) && defined(STM32H7_ENABLE_PRIMARY_BOOT_BSP))
   /* Reset the RCC clock configuration to the default reset state ------------*/
   /* Set HSION bit */
   RCC->CR |= RCC_CR_HSION;
