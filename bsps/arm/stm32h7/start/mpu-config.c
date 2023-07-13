@@ -30,6 +30,11 @@
 #include <stm32h7/mpu-config.h>
 #include <bspopts.h>
 
+
+#if defined(STM32H7_ENABLE_MPU_ALIGNMENT) && defined(STM32H7_ENABLE_MPU_ALIGNMENT_MERGE)
+#error "MPU alignment and MPU alignment merge are two mutualy exclusive options! Please fix your BSP configuration."
+#endif
+
 //#define SDRAM1_NO_CACHE 1
 
 const ARMV7M_MPU_Region_config stm32h7_config_mpu_region [] = {
