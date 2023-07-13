@@ -123,6 +123,8 @@ links:
 - role: build-dependency
   uid: optethgpiobregs
 - role: build-dependency
+  uid: optenslavebsphweth
+- role: build-dependency
   uid: ../../optconsolebaud
 - role: build-dependency
   uid: ../../optconsoleirq
