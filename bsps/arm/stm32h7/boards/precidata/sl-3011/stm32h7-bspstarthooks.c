@@ -102,6 +102,8 @@ static void fwlog(const char *s) {
     bios_console_write(s, strlen(s));
 }
 
+extern void getentropy_hook(void);
+
 void bsp_start_hook_1(void)
 {
     BIOS->cm7.updates++;
@@ -116,4 +118,6 @@ void bsp_start_hook_1(void)
   bsp_start_clear_bss();
     BIOS->cm7.state = BIOS_CORE_RUNNING;
     BIOS->cm7.updates++;
+    //stm32h7_clk_enable(STM32H7_MODULE_RNG);
+    getentropy_hook();
 }

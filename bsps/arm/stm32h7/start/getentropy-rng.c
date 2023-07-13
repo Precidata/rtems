@@ -25,8 +25,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <bspopts.h>
-
 #include <stm32h7/hal.h>
 
 #include <rtems.h>
@@ -36,7 +34,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#if !defined(STM32H7_SLAVE_BSP)
+#include <rtems/bspIo.h>
 
 static RNG_HandleTypeDef stm32h7_rng_instance = {
   .Instance = RNG,
@@ -45,8 +43,17 @@ static RNG_HandleTypeDef stm32h7_rng_instance = {
 
 static void stm32h7_rng_enable(void)
 {
+  printk("STM32H7 RNG: initialize.\n");
   stm32h7_clk_enable(STM32H7_MODULE_RNG);
   HAL_RNG_Init(&stm32h7_rng_instance);
+}
+
+void getentropy_hook(void)
+{
+  printk("STM32H7 RNG: hook invoked.\n");
+  RCC_PeriphCLKInitTypeDef rcc;
+  HAL_RCCEx_GetPeriphCLKConfig(&rcc);
+  printk("RNG peripheral clock: %d\n", rcc.RngClockSelection);
 }
 
 int getentropy(void *ptr, size_t n)
@@ -82,26 +89,3 @@ RTEMS_SYSINIT_ITEM(
   RTEMS_SYSINIT_DEVICE_DRIVERS,
   RTEMS_SYSINIT_ORDER_LAST_BUT_5
 );
-
-#else /* STM32H7_SLAVE_BSP */
-
-static uint32_t rnd_val = 0;
-
-int getentropy(void *ptr, size_t n)
-{
-  while (n > 0) {
-    uint32_t random;
-    size_t copy;
-
-    random = _CPU_Counter_read() + rnd_val++;
-
-    copy = MIN(sizeof(random), n);
-    ptr = memcpy(ptr, &random, copy);
-    n -= copy;
-    ptr += copy;
-  }
-
-  return 0;
-}
-
-#endif /* STM32H7_SLAVE_BSP */
