@@ -154,6 +154,19 @@ const ARMV7M_MPU_Region_config stm32h7_config_mpu_region [] = {
         | ARMV7M_MPU_RASR_S
         | ARMV7M_MPU_RASR_ENABLE
     }
+#ifdef STM32H7_SLAVE_BSP_HW_ETH
+#warning "SLAVE BSP is going to use HW ETH"
+    , {
+     /* ordered |   shareable   | RW         | no access    | NO */
+      .begin = stm32h7_memory_peripheral_begin,
+      .end = stm32h7_memory_peripheral_end,
+      .rasr = ARMV7M_MPU_RASR_XN
+        | ARMV7M_MPU_RASR_AP(0x1)
+        | ARMV7M_MPU_RASR_TEX(0x0)
+        | ARMV7M_MPU_RASR_S
+        | ARMV7M_MPU_RASR_ENABLE
+    }
+#endif /* STM32H7_SLAVE_BSP_HW_ETH */
 #endif /* STM32H7_SLAVE_BSP */
   };
 
