@@ -35,7 +35,6 @@
 #error "MPU alignment and MPU alignment merge are two mutualy exclusive options! Please fix your BSP configuration."
 #endif
 
-//#define SDRAM1_NO_CACHE 1
 
 const ARMV7M_MPU_Region_config stm32h7_config_mpu_region [] = {
     {
