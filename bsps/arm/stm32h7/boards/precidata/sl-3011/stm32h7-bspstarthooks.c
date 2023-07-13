@@ -93,6 +93,8 @@ void bsp_start_hook_0(void)
   }
   /* not using ARMV7M_MPU_CTRL_DEFAULT here to avoid ARMV7M_MPU_CTRL_PRIVDEFENA */
   _ARMV7M_MPU_Setup(ARMV7M_MPU_CTRL_ENABLE, stm32h7_config_mpu_region, stm32h7_config_mpu_region_count);
+  SCB_InvalidateICache();
+  SCB_CleanInvalidateDCache();
 #endif
 }
 
