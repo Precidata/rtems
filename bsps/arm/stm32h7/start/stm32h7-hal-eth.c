@@ -33,6 +33,8 @@
 
 #include <bspopts.h>
 
+#include <rtems/score/armv7m.h>
+
 #ifndef STM32H7B3xxQ
 
 static const stm32h7_gpio_config gpiog = {
@@ -86,7 +88,9 @@ static const stm32h7_gpio_config gpiob = {
 void
 HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 {
-#ifndef STM32H7_SLAVE_BSP
+#if !defined(STM32H7_SLAVE_BSP) || defined(STM32H7_SLAVE_BSP_HW_ETH)
+    ARMV7M_Exception_handler ethisr = _ARMV7M_Get_exception_handler( ETH_IRQn );
+    printf("%s, ethisr: %p\n", __FUNCTION__, (void*)ethisr);
   stm32h7_clk_enable(STM32H7_MODULE_ETH1MAC);
   stm32h7_clk_enable(STM32H7_MODULE_ETH1TX);
   stm32h7_clk_enable(STM32H7_MODULE_ETH1RX);
@@ -96,7 +100,7 @@ HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 #ifdef STM32H7_ETH_GPIOB_PINS
   stm32h7_gpio_init(&gpiob);
 #endif
-#endif /* STM32H7_SLAVE_BSP */
+#endif /* ! STM32H7_SLAVE_BSP || STM32H7_SLAVE_BSP_HW_ETH */
 }
 
 #endif
