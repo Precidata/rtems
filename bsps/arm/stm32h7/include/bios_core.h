@@ -1,5 +1,5 @@
 /*
- * $Id: bios_core.h 3376 2023-05-07 21:11:04Z cedric $
+ * $Id: bios_core.h 3439 2023-07-14 10:13:56Z cedric $
  *
  * Copyright (C) 2023 - 2023 Cedric Berger <cedric@berger.to>
  *
@@ -66,14 +66,14 @@ extern "C" {
 #define BIOS_COMMAND_RETRY	1000000
 
 /* cache control */
-#define BIOS_SCB_BASE           0xe000ed00UL
-#define BIOS_SCB_CCR           	(*(volatile uint32_t *)(BIOS_SCB_BASE+0x014))
-#define BIOS_SCB_CCSIDR         (*(volatile uint32_t *)(BIOS_SCB_BASE+0x080))
-#define BIOS_SCB_CSSELR         (*(volatile uint32_t *)(BIOS_SCB_BASE+0x084))
-#define BIOS_SCB_ICIALLU        (*(volatile uint32_t *)(BIOS_SCB_BASE+0x250))
-#define BIOS_SCB_DCIMVAC        (*(volatile uint32_t *)(BIOS_SCB_BASE+0x25C))
-#define BIOS_SCB_DCISW          (*(volatile uint32_t *)(BIOS_SCB_BASE+0x260))
-#define BIOS_SCB_DCCMVAC        (*(volatile uint32_t *)(BIOS_SCB_BASE+0x268))
+#define BIOS_SCB_BASE		0xe000ed00UL
+#define BIOS_SCB_CCR		(*(volatile uint32_t *)(BIOS_SCB_BASE+0x014))
+#define BIOS_SCB_CCSIDR		(*(volatile uint32_t *)(BIOS_SCB_BASE+0x080))
+#define BIOS_SCB_CSSELR		(*(volatile uint32_t *)(BIOS_SCB_BASE+0x084))
+#define BIOS_SCB_ICIALLU	(*(volatile uint32_t *)(BIOS_SCB_BASE+0x250))
+#define BIOS_SCB_DCIMVAC	(*(volatile uint32_t *)(BIOS_SCB_BASE+0x25C))
+#define BIOS_SCB_DCISW		(*(volatile uint32_t *)(BIOS_SCB_BASE+0x260))
+#define BIOS_SCB_DCCMVAC	(*(volatile uint32_t *)(BIOS_SCB_BASE+0x268))
 
 #define BIOS_DCACHE_ENABLED	(BIOS_SCB_CCR & (1<<16))
 #define BIOS_DCACHE_LINE	32
@@ -154,13 +154,59 @@ typedef struct bios_byte_queue {
 } bios_byte_queue;
 
 /*
- * Virtual TTY, to connect to a shell running on the CM7
+ * Packet entry for ring buffer
+ */
+typedef struct bios_pkt_entry {
+    void			*buf;	 /* packet data */
+    uint32_t			 size;	 /* packet size */
+} bios_pkt_entry;
+
+/*
+ * Unidirectional ring buffer for packet elements
+ */
+typedef struct bios_pkt_queue {
+    bios_pkt_entry		*pkts;	 /* ring buffer */
+    uint32_t			 size;	 /* number of packets, power of 2 */
+    volatile uint32_t		*head;	 /* read pointer */
+    volatile uint32_t		*tail;	 /* write pointer */
+} bios_pkt_queue;
+
+/*
+ * Virtual TTY
  */
 typedef struct bios_virtual_tty {
     struct bios_byte_queue	*inq;	 /* CM4 => CM7 */
     struct bios_byte_queue	*outq;	 /* CM7 => CM4 */
-    bool			 connected;	/* CM4 => CM7 */
+    bool			 connected;
+					 /* CM4 => CM7 */
+    uint8_t			 hsem;	 /* valid if > 0 */
 } bios_virtual_tty;
+
+#define BIOS_VIRTUAL_MII_NREGS	6
+
+typedef union bios_virtual_mii {
+    uint16_t			 regs[BIOS_VIRTUAL_MII_NREGS];
+    struct {
+	uint16_t		 bmcr;	  /* basic mode control register */
+	uint16_t		 bmsr;	  /* basic mode status register */
+	uint16_t		 phyidr1; /* PHY Identifier register #1 */
+	uint16_t		 phyidr2; /* PHY Identifier register #2 */
+	uint16_t		 anar;	  /* auto-negotiation advertisement  */
+	uint16_t		 anlpar;  /* auto-negotiation link partner ability */
+    } reg;
+} bios_virtual_mii;
+
+/*
+ * Virtual Ethernet
+ */
+typedef struct bios_virtual_eth {
+    struct bios_pkt_queue	*inq;	 /* CM4 => CM7 */
+    struct bios_pkt_queue	*outq;	 /* CM7 => CM4 */
+    bios_virtual_mii		*mii;	 /* CM4 => CM7 */
+    bool			 connected;
+					 /* CM4 => CM7 */
+    uint8_t			 hsem;	 /* valid if > 0 */
+} bios_virtual_eth;
 
 /*
  * RPC calls between M4 and M7 cores
@@ -183,6 +229,9 @@ typedef enum bios_rpc_command {
     BIOS_CMD_NONE		= 0,
     BIOS_CMD_RUN		= 1,
     BIOS_CMD_TRAP		= 2,
+    BIOS_CMD_CHECK_OB		= 3,
+    BIOS_CMD_SWAP_BANKS		= 4,
+    BIOS_CMD_DELAY		= 5,
     BIOS_CMD_MEMSET_32		= 10,
     BIOS_CMD_MEMCPY_32		= 11,
     BIOS_CMD_ETH_PACKET		= 20,
@@ -230,20 +279,23 @@ typedef struct bios_root {
     bios_rpc_buffer		*rpc4to7;	/* command bloc, m4 => m7 */
     uint32_t			 nrpc7to4;	/* number of command bloc, m7 => m4 */
     bios_rpc_buffer		*rpc7to4;	/* command bloc, m7 => m4 */
+    uint32_t			 nveth;		/* number of virtual ethernet ports */
+    bios_virtual_eth		*veths;		/* list of virtual ethernet ports */
 } bios_root;
 
 
 /********** functions **********/
 
 /*
- * Perform a DMB and sleep a little bit to avoid hammering the shared memory
+ * Perform a DMB and 1us delay to avoid hammering the shared memory
+ * The 1us is for the M7 running out of flash at 300MHz
  */
 BIOS_INLINE void
-bios_dmb_delay(void)
+bios_dmb_delay_1us(void)
 {
     /* sleep a bit */
     BIOS_DMB();
-    for (volatile int i = 0; i < 16; i++)
+    for (volatile int i = 0; i < 35; i++)
 	asm volatile ("nop");
 }
 
@@ -258,9 +310,9 @@ bios_set_state(bios_core_state state)
     BIOS->cm7.magic = BIOS_MAGIC_V1;
     BIOS_DSB();
     if (BIOS_DCACHE_ENABLED) {
-        BIOS_SCB_DCCMVAC = (intptr_t)&BIOS->cm7;
-        BIOS_DSB();
-        BIOS_ISB();
+	BIOS_SCB_DCCMVAC = (intptr_t)&BIOS->cm7;
+	BIOS_DSB();
+	BIOS_ISB();
     }
 }
 
@@ -460,9 +512,9 @@ bios_write_rpc_status(bios_rpc_buffer *rpc, bios_rpc_status status)
     rpc->status = status;
     BIOS_DSB();
     if (BIOS_DCACHE_ENABLED) {
-        BIOS_SCB_DCCMVAC = (intptr_t)&rpc->status;
-        BIOS_DSB();
-        BIOS_ISB();
+	BIOS_SCB_DCCMVAC = (intptr_t)&rpc->status;
+	BIOS_DSB();
+	BIOS_ISB();
     }
 }
 
@@ -492,9 +544,9 @@ bios_write_rpc_command(bios_rpc_buffer *rpc, bios_rpc_command command)
     rpc->command = command;
     BIOS_DSB();
     if (BIOS_DCACHE_ENABLED) {
-        BIOS_SCB_DCCMVAC = (intptr_t)&rpc->command;
-        BIOS_DSB();
-        BIOS_ISB();
+	BIOS_SCB_DCCMVAC = (intptr_t)&rpc->command;
+	BIOS_DSB();
+	BIOS_ISB();
     }
 }
 
@@ -530,7 +582,7 @@ bios_rpc_execute(bios_rpc_buffer *rpc, bios_rpc_command cmd, int nargs, const bi
     bios_write_rpc_command(rpc, cmd);
     int rv, retry;
     for (retry = 0; retry < BIOS_COMMAND_RETRY; retry++) {
-	bios_dmb_delay();
+	bios_dmb_delay_1us();
 	bios_rpc_status status = bios_read_rpc_status(rpc);
 	if (status < 0) {
 	    rv = status;
@@ -553,7 +605,7 @@ _cleanup:
      */
     bios_write_rpc_command(rpc, BIOS_CMD_NONE);
     for (retry = 0; retry < BIOS_WAITING_RETRY; retry++) {
-	bios_dmb_delay();
+	bios_dmb_delay_1us();
 	if (bios_read_rpc_status(rpc) == BIOS_RPC_IDLE)
 	    break;
     }
