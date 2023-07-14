@@ -69,7 +69,7 @@ void bsp_start_hook_0(void)
             cm4_is_running = true;
         }
         else {
-            bios_dmb_delay();
+            bios_dmb_delay_1us();
             slave_wait_cycles++;
         }
         __DSB();
