@@ -34,14 +34,14 @@ static void
 virt_console_putchar(char c)
 {
     for (;;) {
-        //  int rv = bios_console_write(&c, 1);
-        int rv = bios_vtty_write(0, &c, 1);
-        switch (rv) {
-        case -EAGAIN:
-            continue;
-        default:
-            return;
-        }
+	//  int rv = bios_console_write(&c, 1);
+	int rv = bios_vtty_write(0, &c, 1);
+	switch (rv) {
+	case -EAGAIN:
+	    continue;
+	default:
+	    return;
+	}
     }
 }
 
@@ -58,8 +58,8 @@ static inline virt_uart_context *virt_uart_get_context(
 {
     size_t i;
     for (i = 0; i < (BIOS->nvtty < MAX_NUMBER_OF_VTTY ? BIOS->nvtty : MAX_NUMBER_OF_VTTY); i++) {
-        if (&(virt_uart_instances[i].device) == base)
-            return &virt_uart_instances[i];
+	if (&(virt_uart_instances[i].device) == base)
+	    return &virt_uart_instances[i];
     }
     return NULL;
 }
@@ -71,7 +71,13 @@ static void virt_tty_write(
 )
 {
     virt_uart_context* ctx = virt_uart_get_context(base);
-    bios_vtty_write(ctx->vtty_no, buf, len);
+    while (len > 0) {
+	int rv = bios_vtty_write(ctx->vtty_no, buf, len);
+	if (rv == (-EAGAIN))
+	    continue;
+	len -= rv;
+	buf += rv;
+    }
 }
 
 static int virt_tty_read(rtems_termios_device_context *base)
@@ -83,13 +89,10 @@ static int virt_tty_read(rtems_termios_device_context *base)
      */
     int c = 0;
     for (;;) {
-        int rv = bios_vtty_read(ctx->vtty_no, &c, 1);
-        if (rv == (-EAGAIN)) {
-            continue;
-        }
-        else {
-            return c;
-        }
+	int rv = bios_vtty_read(ctx->vtty_no, &c, 1);
+	if (rv == (-EAGAIN))
+	    continue;
+	return c;
     }
     /* unreachable code */
     return c;
