@@ -71,8 +71,12 @@ static void virt_tty_write(
 )
 {
     virt_uart_context* ctx = virt_uart_get_context(base);
+    rtems_interrupt_level level;
+
     while (len > 0) {
+	rtems_interrupt_disable(level);
 	int rv = bios_vtty_write(ctx->vtty_no, buf, len);
+	rtems_interrupt_enable(level);
 	if (rv == (-EAGAIN))
 	    continue;
 	len -= rv;
@@ -83,13 +87,18 @@ static void virt_tty_write(
 static int virt_tty_read(rtems_termios_device_context *base)
 {
     virt_uart_context* ctx = virt_uart_get_context(base);
+    rtems_interrupt_level level;
+
     /* need to initialize character holder to 0 and not to -1
      * since if we do -1, then assigning to it one character blow
      * would still result in c < 0 which would break termios processing
      */
     int c = 0;
+
     for (;;) {
+	rtems_interrupt_disable(level);
 	int rv = bios_vtty_read(ctx->vtty_no, &c, 1);
+	rtems_interrupt_enable(level);
 	if (rv == (-EAGAIN))
 	    continue;
 	return c;
