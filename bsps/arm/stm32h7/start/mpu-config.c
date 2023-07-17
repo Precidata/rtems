@@ -150,7 +150,7 @@ const ARMV7M_MPU_Region_config stm32h7_config_mpu_region [] = {
       .end = stm32h7_memory_sram_4_end,
       .rasr = ARMV7M_MPU_RASR_XN
         | ARMV7M_MPU_RASR_AP(0x1)
-        | ARMV7M_MPU_RASR_TEX(0x1)
+        | ARMV7M_MPU_RASR_TEX(0x0)
         | ARMV7M_MPU_RASR_S
         | ARMV7M_MPU_RASR_ENABLE
     }
