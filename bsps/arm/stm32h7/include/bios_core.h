@@ -1,5 +1,5 @@
 /*
- * $Id: bios_core.h 3439 2023-07-14 10:13:56Z cedric $
+ * $Id: bios_core.h 3446 2023-07-18 10:13:10Z cedric $
  *
  * Copyright (C) 2023 - 2023 Cedric Berger <cedric@berger.to>
  *
@@ -182,27 +182,13 @@ typedef struct bios_virtual_tty {
     uint8_t			 hsem;	 /* valid if > 0 */
 } bios_virtual_tty;
 
-#define BIOS_VIRTUAL_MII_NREGS	6
-
-typedef union bios_virtual_mii {
-    uint16_t			 regs[BIOS_VIRTUAL_MII_NREGS];
-    struct {
-	uint16_t		 bmcr;	  /* basic mode control register */
-	uint16_t		 bmsr;	  /* basic mode status register */
-	uint16_t		 phyidr1; /* PHY Identifier register #1 */
-	uint16_t		 phyidr2; /* PHY Identifier register #2 */
-	uint16_t		 anar;	  /* auto-negotiation advertisement  */
-	uint16_t		 anlpar;  /* auto-negotiation link partner ability */
-    } reg;
-} bios_virtual_mii;
-
 /*
  * Virtual Ethernet
  */
 typedef struct bios_virtual_eth {
     struct bios_pkt_queue	*inq;	 /* CM4 => CM7 */
     struct bios_pkt_queue	*outq;	 /* CM7 => CM4 */
-    bios_virtual_mii		*mii;	 /* CM4 => CM7 */
+    uint8_t			*mac;	 /* CM4 => CM7 */
     bool			 connected;
 					 /* CM4 => CM7 */
     uint8_t			 hsem;	 /* valid if > 0 */
