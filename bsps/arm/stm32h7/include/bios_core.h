@@ -1,5 +1,5 @@
 /*
- * $Id: bios_core.h 3446 2023-07-18 10:13:10Z cedric $
+ * $Id: bios_core.h 3466 2023-07-19 16:53:26Z cedric $
  *
  * Copyright (C) 2023 - 2023 Cedric Berger <cedric@berger.to>
  *
@@ -67,16 +67,32 @@ extern "C" {
 
 /* cache control */
 #define BIOS_SCB_BASE		0xe000ed00UL
-#define BIOS_SCB_CCR		(*(volatile uint32_t *)(BIOS_SCB_BASE+0x014))
-#define BIOS_SCB_CCSIDR		(*(volatile uint32_t *)(BIOS_SCB_BASE+0x080))
-#define BIOS_SCB_CSSELR		(*(volatile uint32_t *)(BIOS_SCB_BASE+0x084))
-#define BIOS_SCB_ICIALLU	(*(volatile uint32_t *)(BIOS_SCB_BASE+0x250))
-#define BIOS_SCB_DCIMVAC	(*(volatile uint32_t *)(BIOS_SCB_BASE+0x25C))
-#define BIOS_SCB_DCISW		(*(volatile uint32_t *)(BIOS_SCB_BASE+0x260))
-#define BIOS_SCB_DCCMVAC	(*(volatile uint32_t *)(BIOS_SCB_BASE+0x268))
+#define BIOS_SCB_CCR		(*(volatile uint32_t *)(BIOS_SCB_BASE + 0x014))
+#define BIOS_SCB_CCSIDR		(*(volatile uint32_t *)(BIOS_SCB_BASE + 0x080))
+#define BIOS_SCB_CSSELR		(*(volatile uint32_t *)(BIOS_SCB_BASE + 0x084))
+#define BIOS_SCB_ICIALLU	(*(volatile uint32_t *)(BIOS_SCB_BASE + 0x250))
+#define BIOS_SCB_DCIMVAC	(*(volatile uint32_t *)(BIOS_SCB_BASE + 0x25c))
+#define BIOS_SCB_DCISW		(*(volatile uint32_t *)(BIOS_SCB_BASE + 0x260))
+#define BIOS_SCB_DCCMVAC	(*(volatile uint32_t *)(BIOS_SCB_BASE + 0x268))
 
 #define BIOS_DCACHE_ENABLED	(BIOS_SCB_CCR & (1<<16))
 #define BIOS_DCACHE_LINE	32
+
+/* semaphores: fixed allocation */
+#define BIOS_HSEM_ID_CM4	1
+#define BIOS_HSEM_ID_CM7	2
+#define BIOS_HSEM_ID_CONSOLE	3
+
+/* semaphores: hardware definition */
+#define BIOS_HSEM_BASE		0x58026400
+#define BIOS_HSEM_R		((volatile uint32_t *)(BIOS_HSEM_BASE))
+#define BIOS_HSEM_RLR		((volatile uint32_t *)(BIOS_HSEM_BASE + 0x080))
+
+#define BIOS_HSEM_TICKLE(id)				\
+do {							\
+    if (id)						\
+	BIOS_HSEM_R[id] = BIOS_HSEM_RLR[id] & 0xffff;	\
+} while (0)
 
 /*
  * LED colors
@@ -286,7 +302,7 @@ bios_dmb_delay_1us(void)
 }
 
 /*
- * Update our state
+ * Update cm7 state
  */
 BIOS_INLINE void
 bios_set_state(bios_core_state state)
@@ -300,6 +316,7 @@ bios_set_state(bios_core_state state)
 	BIOS_DSB();
 	BIOS_ISB();
     }
+    BIOS_HSEM_TICKLE(BIOS_HSEM_ID_CM7);
 }
 
 /*
@@ -452,7 +469,8 @@ bios_bqe_read(bios_byte_queue *bq, void *buf, unsigned n)
 BIOS_INLINE int
 bios_console_write(const void *buf, unsigned n)
 {
-    return (bios_bqe_write(BIOS->console, buf, n));
+    int rv = bios_bqe_write(BIOS->console, buf, n);
+    return (rv);
 }
 
 /*
@@ -463,7 +481,8 @@ bios_vtty_write(unsigned tty, const void *buf, unsigned n)
 {
     if (tty >= BIOS->nvtty)
 	return (-ENXIO);
-    return (bios_bqe_write(BIOS->vttys[tty].outq, buf, n));
+    int rv = bios_bqe_write(BIOS->vttys[tty].outq, buf, n);
+    return (rv);
 }
 
 /*
@@ -474,7 +493,8 @@ bios_vtty_read(unsigned tty, void *buf, unsigned n)
 {
     if (tty >= BIOS->nvtty)
 	return (-ENXIO);
-    return (bios_bqe_read(BIOS->vttys[tty].inq, buf, n));
+    int rv = bios_bqe_read(BIOS->vttys[tty].inq, buf, n);
+    return (rv);
 }
 
 /*
