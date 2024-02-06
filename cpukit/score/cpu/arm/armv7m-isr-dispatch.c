@@ -38,6 +38,8 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include <rtems/score/armv7m.h>
 #include <rtems/score/percpu.h>
 
@@ -95,6 +97,8 @@ void _ARMV7M_Pendable_service_call( void )
 
     ef = (ARMV7M_Exception_frame *) _ARMV7M_Get_PSP();
     --ef;
+
+    memset(ef, 0, sizeof(*ef));		/* start with a clean state */
     _ARMV7M_Set_PSP( (uint32_t) ef );
 
     /*
