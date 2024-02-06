@@ -31,8 +31,8 @@
 #endif
 
 #define CONFIGURE_INIT
-#include "system.h"
-#include <stdio.h>
+#include <rtems.h>
+#include <unistd.h>
 #include <tmacros.h>
 
 extern int paranoia(int, char **);
@@ -41,10 +41,13 @@ const char rtems_test_name[] = "PARANOIA";
 
 char *args[2] = { "paranoia", 0 };
 
-rtems_task Init(
+static rtems_task Init(
   rtems_task_argument ignored
 )
 {
+  sleep(1);
+  /* <-- here, VFP is already borked */
+
   /*
    *  Install whatever optional floating point assistance package
    *  is required by this CPU.
@@ -60,3 +63,13 @@ rtems_task Init(
   TEST_END();
   rtems_test_exit( 0 );
 }
+
+#define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
+#define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
+#define CONFIGURE_MAXIMUM_TASKS 1
+#define CONFIGURE_RTEMS_INIT_TASKS_TABLE
+#define CONFIGURE_INIT_TASK_ATTRIBUTES RTEMS_FLOATING_POINT
+#define CONFIGURE_INIT
+#define CONFIGURE_STACK_CHECKER_ENABLED
+
+#include <rtems/confdefs.h>
