@@ -249,6 +249,7 @@ typedef struct {
   uint64_t register_d13;
   uint64_t register_d14;
   uint64_t register_d15;
+  uint32_t register_fpscr;
 #endif
 #ifdef RTEMS_SMP
   volatile bool is_executing;

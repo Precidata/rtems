@@ -56,12 +56,16 @@ void __attribute__((naked)) _CPU_Context_switch(
 #ifdef ARM_MULTILIB_VFP
     "add r4, r0, %[d8off]\n"
     "vstm r4, {d8-d15}\n"
+    "vmrs r4, fpscr\n"
+    "str r4, [r0, %[fpscroff]]\n"
 #endif
     "str sp, [r0, %[spctxoff]]\n"
     "str r3, [r0, %[isrctxoff]]\n"
     "ldr r3, [r1, %[isrctxoff]]\n"
     "ldr sp, [r1, %[spctxoff]]\n"
 #ifdef ARM_MULTILIB_VFP
+    "ldr r4, [r1, %[fpscroff]]\n"
+    "vmsr fpscr, r4\n"
     "add r4, r1, %[d8off]\n"
     "vldm r4, {d8-d15}\n"
 #endif
@@ -72,6 +76,7 @@ void __attribute__((naked)) _CPU_Context_switch(
     : [spctxoff] "J" (offsetof(Context_Control, register_sp)),
 #ifdef ARM_MULTILIB_VFP
       [d8off] "J" (ARM_CONTEXT_CONTROL_D8_OFFSET),
+      [fpscroff] "J" (offsetof(Context_Control, register_fpscr)),
 #endif
       [isrctxoff] "J" (offsetof(Context_Control, isr_nest_level)),
       [isrpcpuoff] "J" (offsetof(Per_CPU_Control, isr_nest_level))
