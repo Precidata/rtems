@@ -1,5 +1,5 @@
 /*
- * $Id: bios_core.h 3466 2023-07-19 16:53:26Z cedric $
+ * $Id: bios_core.h 3764 2024-08-06 17:19:33Z cedric $
  *
  * Copyright (C) 2023 - 2023 Cedric Berger <cedric@berger.to>
  *
@@ -316,7 +316,9 @@ bios_set_state(bios_core_state state)
 	BIOS_DSB();
 	BIOS_ISB();
     }
+#if 0
     BIOS_HSEM_TICKLE(BIOS_HSEM_ID_CM7);
+#endif
 }
 
 /*
@@ -414,6 +416,27 @@ bios_bqe_write(bios_byte_queue *bq, const void *buf, unsigned n)
 	BIOS_ISB();
     }
     return (n);
+}
+
+/*
+ * Lookup available bytes to read on buffer
+ */
+BIOS_INLINE int
+bios_bqe_read_available(bios_byte_queue *bq)
+{
+    uint32_t size = bq->size;
+    uint32_t head = *bq->head;
+    if (BIOS_DCACHE_ENABLED) {
+	BIOS_DSB();
+	BIOS_SCB_DCIMVAC = (intptr_t)bq->tail;
+	BIOS_DSB();
+	BIOS_ISB();
+    }
+    uint32_t tail = *bq->tail;
+    uint32_t used = tail - head;
+    if (used > size)
+	return (-EFAULT);		 /* corrupted queue */
+    return (used);
 }
 
 /*
@@ -578,6 +601,9 @@ bios_read_rpc_command(bios_rpc_buffer *rpc)
 BIOS_INLINE int
 bios_rpc_execute(bios_rpc_buffer *rpc, bios_rpc_command cmd, int nargs, const bios_rpc_arg *args)
 {
+    bios_rpc_status status;
+    int rv, retry;
+
     if (rpc->command != BIOS_CMD_NONE)
 	return (-EBUSY);
     if (nargs < 0 || nargs > 7)
@@ -586,10 +612,9 @@ bios_rpc_execute(bios_rpc_buffer *rpc, bios_rpc_command cmd, int nargs, const bi
 	return (-EBUSY);
     memcpy(rpc->param, args, nargs * sizeof(bios_rpc_arg));
     bios_write_rpc_command(rpc, cmd);
-    int rv, retry;
     for (retry = 0; retry < BIOS_COMMAND_RETRY; retry++) {
 	bios_dmb_delay_1us();
-	bios_rpc_status status = bios_read_rpc_status(rpc);
+	status = bios_read_rpc_status(rpc);
 	if (status < 0) {
 	    rv = status;
 	    goto _cleanup;
@@ -610,6 +635,8 @@ _cleanup:
      * reset command and wait until status drop back to 0
      */
     bios_write_rpc_command(rpc, BIOS_CMD_NONE);
+    if (cmd == BIOS_CMD_RUN)
+	return (rv);
     for (retry = 0; retry < BIOS_WAITING_RETRY; retry++) {
 	bios_dmb_delay_1us();
 	if (bios_read_rpc_status(rpc) == BIOS_RPC_IDLE)
