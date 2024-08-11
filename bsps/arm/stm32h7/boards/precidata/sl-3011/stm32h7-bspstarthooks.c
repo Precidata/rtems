@@ -58,31 +58,19 @@ static void MinimalSystemInit (void)
 
 void bsp_start_hook_0(void)
 {
-    MinimalSystemInit();
-    HAL_Init();
-    bool cm4_is_running = false;
-    do {
-        __DSB();
-        if (BIOS->cm4.magic == 0xfacade01
-            && BIOS->cm4.state != BIOS_CORE_INIT
-            && BIOS->cm4.updates > 0) {
-            cm4_is_running = true;
-        }
-        else {
-            bios_dmb_delay_1us();
-            slave_wait_cycles++;
-        }
-        __DSB();
-    } while (!cm4_is_running);
-    bios_set_state(BIOS_CORE_RUNNING);
-  bios_inst_led_solid(BIOS_LED_WHITE);
-  bios_console_write("Hello\n", 6);
-  bios_vtty_write(0, "Hello\r\n", 7);
-  /* Let's setup core clock variable by calling update function here.
-     This should be actually the only system/hw init we need to perform on
-     slave side. */
-  //  SystemCoreClock = 300000000;
+  MinimalSystemInit();
+
+  for (;;) {
+    __DSB();
+    if (BIOS->cm4.magic == 0xfacade01 &&
+      BIOS->cm4.state != BIOS_CORE_INIT &&
+      BIOS->cm4.updates > 0)
+      break; /* cm4 is running */
+  }
+
   SystemCoreClockUpdate();
+  HAL_Init();
+
 #if __CORTEX_M == 0x07U
   if ((SCB->CCR & SCB_CCR_IC_Msk) == 0) {
     SCB_EnableICache();
@@ -98,26 +86,22 @@ void bsp_start_hook_0(void)
 #endif
 }
 
-static void fwlog(const char *s) {
-    bios_console_write(s, strlen(s));
-}
-
 extern void getentropy_hook(void);
 
 void bsp_start_hook_1(void)
 {
-    BIOS->cm7.updates++;
-  bios_inst_led_solid(BIOS_LED_CYAN);
-  fwlog("Before copy sections...\n");
   bsp_start_copy_sections_compact();
-  fwlog("After copy sections.\n");
 #if __CORTEX_M == 0x07U
   SCB_CleanDCache();
   SCB_InvalidateICache();
 #endif
   bsp_start_clear_bss();
-    BIOS->cm7.state = BIOS_CORE_RUNNING;
-    BIOS->cm7.updates++;
-    //stm32h7_clk_enable(STM32H7_MODULE_RNG);
-    getentropy_hook();
+
+  bios_set_state(BIOS_CORE_RUNNING);
+  bios_console_write("rtems: running\n", 15);
+
+#ifdef STM32H7_SLAVE_BSP_HW_ETH
+  stm32h7_clk_enable(STM32H7_MODULE_RNG);
+  getentropy_hook();
+#endif
 }
