@@ -32,20 +32,19 @@
 #include <stddef.h>
 
 /*
- * support for custom app stack allocator. Usable for cases requiring
+ * Support for custom app stack allocator. Usable for cases requiring
  * to have app stack in custom RAM specified. E.g. DTCM, SRAMx, AXI etc.
+ * This trivial allocator does not support deallocation.
  */
 
-#if !defined(STM32H7_APP_STACK_IN_DEFAULT)
+#ifndef STM32H7_APP_STACK_IN_DEFAULT
 
-#if defined(STM32H7_APP_STACK_IN_DTCM)
-#warning "DTCM app stack"
+#ifdef STM32H7_APP_STACK_IN_DTCM
 #define STACK_LOCATION_BEGIN stm32h7_memory_dtcm_begin
 #define STACK_LOCATION_SIZE stm32h7_memory_dtcm_size
 #endif
 
-#if defined(STM32H7_APP_STACK_IN_AXI)
-#warning "AXI app stack"
+#ifdef STM32H7_APP_STACK_IN_AXI
 #define STACK_LOCATION_BEGIN stm32h7_memory_sram_axi_begin
 #define STACK_LOCATION_SIZE stm32h7_memory_sram_axi_size
 #endif
@@ -59,28 +58,31 @@ stm32h7_stack_allocator_init(size_t size)
     stm32h7_stack_allocate_counter = 0;
 }
 
-void*
+void *
 stm32h7_stack_allocate(size_t size)
 {
-    if (size + stm32h7_stack_allocate_counter > (size_t)STACK_LOCATION_SIZE)
+    void *p;
+
+    if (size + stm32h7_stack_allocate_counter > (size_t)STACK_LOCATION_SIZE) {
+	printk("stack: cannot allocated %lu bytes (%lu used)\n",
+	    size, stm32h7_stack_allocate_counter);
         return NULL;
-    stm32h7_stack_allocate_counter = stm32h7_stack_allocate_counter + size;
-    return &STACK_LOCATION_BEGIN[stm32h7_stack_allocate_counter];
+    }
+    p = STACK_LOCATION_BEGIN + stm32h7_stack_allocate_counter;
+    stm32h7_stack_allocate_counter += size;
+    return (p);
 }
 
-void*
-stm32h7_stack_idle_allocate(uint32_t size, size_t*)
+void *
+stm32h7_stack_idle_allocate(uint32_t cpu, size_t *psize)
 {
-    if (size + stm32h7_stack_allocate_counter > (size_t)STACK_LOCATION_SIZE)
-        return NULL;
-    stm32h7_stack_allocate_counter = stm32h7_stack_allocate_counter + size;
-    return &STACK_LOCATION_BEGIN[stm32h7_stack_allocate_counter];
+    return (stm32h7_stack_allocate(*psize));
 }
 
 void
 stm32h7_stack_deallocate(void* p)
 {
-    rtems_panic("stm32h7_stack_deallocate is not supported\n");
+    printk("stack: deallocate %p is a dummy function\n", p);
 }
 
-#endif
+#endif /* !STM32H7_APP_STACK_IN_DEFAULT */
