@@ -26,10 +26,6 @@
 
 #define MAX_NUMBER_OF_VTTY 10
 
-void fwlog(const char *s) {
-    bios_console_write(s, strlen(s));
-}
-
 static void
 virt_console_putchar(char c)
 {
@@ -127,9 +123,7 @@ rtems_status_code console_initialize(
   void *arg
 )
 {
-    fwlog("console_initialize...\n");
   size_t i;
-  bios_inst_led_solid(BIOS_LED_GREEN);
 
   rtems_termios_initialize();
 
@@ -141,8 +135,6 @@ rtems_status_code console_initialize(
     ctx->vtty_no = i;
 
     snprintf(path, sizeof(path), "/dev/ttyS%" PRIu8, ctx->vtty_no);
-    fwlog(path);
-    fwlog("\n");
     rtems_termios_device_install(
       path,
       &virt_uart_handler,
@@ -150,9 +142,7 @@ rtems_status_code console_initialize(
       &ctx->device
     );
   }
-  bios_inst_led_solid(BIOS_LED_YELLOW);
   link("/dev/ttyS0", CONSOLE_DEVICE_NAME);
-  bios_inst_led_solid(BIOS_LED_BLUE);
   return RTEMS_SUCCESSFUL;
 }
 
