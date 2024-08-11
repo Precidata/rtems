@@ -118,17 +118,6 @@ const ARMV7M_MPU_Region_config stm32h7_config_mpu_region [] = {
 #if STM32H7_SLAVE_BSP
 #warning "SLAVE BSP welcome! :-)"
     , {
-     /* DTCM may be used for the application stack */
-
-     /*  normal  | not shareable | RW         | RW           | NO */
-      .begin = stm32h7_memory_dtcm_begin,
-      .end = stm32h7_memory_dtcm_end,
-      .rasr = ARMV7M_MPU_RASR_XN
-        | ARMV7M_MPU_RASR_AP(0x3)
-        | ARMV7M_MPU_RASR_TEX(0x1) | ARMV7M_MPU_RASR_C | ARMV7M_MPU_RASR_B
-        | ARMV7M_MPU_RASR_ENABLE,
-    }
-    , {
 
      /* protect SRAM 1 and 2 from modification from the BSP side.
         Those are dedicated to the M4 running the master firmware */
@@ -154,8 +143,7 @@ const ARMV7M_MPU_Region_config stm32h7_config_mpu_region [] = {
         | ARMV7M_MPU_RASR_S
         | ARMV7M_MPU_RASR_ENABLE
     }
-#ifdef STM32H7_SLAVE_BSP_HW_ETH
-#warning "SLAVE BSP is going to use HW ETH"
+#warning "SLAVE BSP is going to use some peripherals"
     , {
      /* ordered |   shareable   | RW         | no access    | NO */
       .begin = stm32h7_memory_peripheral_begin,
@@ -166,7 +154,6 @@ const ARMV7M_MPU_Region_config stm32h7_config_mpu_region [] = {
         | ARMV7M_MPU_RASR_S
         | ARMV7M_MPU_RASR_ENABLE
     }
-#endif /* STM32H7_SLAVE_BSP_HW_ETH */
 #endif /* STM32H7_SLAVE_BSP */
   };
 
