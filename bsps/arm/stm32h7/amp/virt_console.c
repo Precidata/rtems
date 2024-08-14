@@ -73,8 +73,10 @@ static void virt_tty_write(
 	rtems_interrupt_disable(level);
 	int rv = bios_vtty_write(ctx->vtty_no, buf, len);
 	rtems_interrupt_enable(level);
-	if (rv == (-EAGAIN))
-	    continue;
+	if (rv == -EAGAIN) {
+	     rtems_task_wake_after(1);
+	     continue;
+	}
 	len -= rv;
 	buf += rv;
     }
@@ -84,22 +86,13 @@ static int virt_tty_read(rtems_termios_device_context *base)
 {
     virt_uart_context* ctx = virt_uart_get_context(base);
     rtems_interrupt_level level;
+    unsigned char c = 0;
 
-    /* need to initialize character holder to 0 and not to -1
-     * since if we do -1, then assigning to it one character blow
-     * would still result in c < 0 which would break termios processing
-     */
-    int c = 0;
-
-    for (;;) {
-	rtems_interrupt_disable(level);
-	int rv = bios_vtty_read(ctx->vtty_no, &c, 1);
-	rtems_interrupt_enable(level);
-	if (rv == (-EAGAIN))
-	    continue;
-	return c;
-    }
-    /* unreachable code */
+    rtems_interrupt_disable(level);
+    int rv = bios_vtty_read(ctx->vtty_no, &c, 1);
+    rtems_interrupt_enable(level);
+    if (rv < 0)
+        return (-1);
     return c;
 }
 
