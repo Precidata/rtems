@@ -25,6 +25,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <rtems.h>
 #include <bsp.h>
 #include <stm32h7/memory.h>
 #include <rtems/fatal.h>
@@ -50,6 +51,8 @@
 #endif
 
 static size_t stm32h7_stack_allocate_counter;
+static void  *stm32h7_stack_allocate_last_p;
+static size_t stm32h7_stack_allocate_last_size;
 
 void
 stm32h7_stack_allocator_init(size_t size)
@@ -70,6 +73,11 @@ stm32h7_stack_allocate(size_t size)
     }
     p = STACK_LOCATION_BEGIN + stm32h7_stack_allocate_counter;
     stm32h7_stack_allocate_counter += size;
+
+    /* remember last allocation */
+    stm32h7_stack_allocate_last_p = p;
+    stm32h7_stack_allocate_last_size = size;
+
     return (p);
 }
 
@@ -82,7 +90,15 @@ stm32h7_stack_idle_allocate(uint32_t cpu, size_t *psize)
 void
 stm32h7_stack_deallocate(void* p)
 {
-    printk("stack: deallocate %p is a dummy function\n", p);
+    if (p == stm32h7_stack_allocate_last_p) {
+	stm32h7_stack_allocate_last_p = NULL;
+	stm32h7_stack_allocate_counter -= stm32h7_stack_allocate_last_size;
+#if 0
+        printk("stack: deallocate last stack at %p (%lu bytes)\n", p,
+            stm32h7_stack_allocate_last_size);
+#endif
+    } else
+	printk("stack: cannot deallocate %p\n", p);
 }
 
 #endif /* !STM32H7_APP_STACK_IN_DEFAULT */
