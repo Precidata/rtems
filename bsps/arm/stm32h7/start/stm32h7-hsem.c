@@ -40,7 +40,7 @@
 #include <stm32h7_hsem.h>
 
 #ifndef STM32H7_HSEM_COUNT
-#define STM32H7_HSEM_COUNT	32
+#define STM32H7_HSEM_COUNT 32
 #endif
 
 struct stm32h7_hsem_stats stm32h7_hsem_stats;
@@ -56,9 +56,8 @@ stm32h7_hsem_irq_handler(void *arg)
     stm32h7_hsem_stats.n_sem_irq_total++;
 
     cisr = HSEM->C1ISR;
-    for (semid = 0, m = 1, h = stm32h7_hsem_handlers;
-	    semid < STM32H7_HSEM_COUNT; semid++, m <<= 1, h++)
-    {
+    for (semid = 0, m = 1, h = stm32h7_hsem_handlers; semid < STM32H7_HSEM_COUNT;
+	 semid++, m <<= 1, h++) {
 	if (!(cisr & m))
 	    continue;
 	switch (h->mode) {
@@ -120,8 +119,8 @@ stm32h7_hsem_init(void)
 {
     stm32h7_hsem_init_done = TRUE;
 
-    rtems_status_code status = rtems_interrupt_handler_install(HSEM1_IRQn,
-	"hsem1", RTEMS_INTERRUPT_UNIQUE, stm32h7_hsem_irq_handler, NULL);
+    rtems_status_code status = rtems_interrupt_handler_install(
+	HSEM1_IRQn, "hsem1", RTEMS_INTERRUPT_UNIQUE, stm32h7_hsem_irq_handler, NULL);
     if (status != RTEMS_SUCCESSFUL)
 	rtems_panic("stm32h7_hsem_init: cannot install HSEM1_IRQn\n");
     printk("stm32h7_hsem_init: init\n");
@@ -169,8 +168,8 @@ stm32h7_hsem_do_add_handler(int semid, rtems_interrupt_handler handler, void *ar
     if (h->mode != STM32H7_HSEM_UNUSED)
 	return (RTEMS_RESOURCE_IN_USE);
     if (server_index >= 0) {
-	int rv = rtems_interrupt_server_request_initialize(server_index, &h->request,
-	    stm32h7_hsem_server_handler, (void *)semid);
+	int rv = rtems_interrupt_server_request_initialize(
+	    server_index, &h->request, stm32h7_hsem_server_handler, (void *)semid);
 	if (rv != RTEMS_SUCCESSFUL)
 	    return (rv);
     }
@@ -202,7 +201,8 @@ stm32h7_hsem_add_irq_handler(int semid, rtems_interrupt_handler handler, void *a
 }
 
 int
-stm32h7_hsem_add_server_handler(int semid, rtems_interrupt_handler handler, void *arg, int server_index)
+stm32h7_hsem_add_server_handler(
+    int semid, rtems_interrupt_handler handler, void *arg, int server_index)
 {
     if (server_index < 0)
 	return (RTEMS_INVALID_ID);
