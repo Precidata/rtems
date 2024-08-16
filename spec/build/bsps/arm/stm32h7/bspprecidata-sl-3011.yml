@@ -13,6 +13,7 @@ install:
 - destination: ${BSP_INCLUDEDIR}
   source:
   - bsps/arm/stm32h7/include/bios_core.h
+  - bsps/arm/stm32h7/include/stm32h7_hsem.h
 links:
 - role: build-dependency
   uid: grp
