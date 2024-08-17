@@ -75,12 +75,14 @@ stm32h7_hsem_irq_handler(void *arg)
 	case STM32H7_HSEM_SERVER:
 	    disable |= m;
 	    clear |= m;
-	    if (h->inflight)
-		rtems_panic("stm32h7_hsem_irq_handler: semaphore %u already inflight\n", semid);
+	    if (!h->inflight) {
+		rtems_interrupt_server_request_submit(&h->request);
+		stm32h7_hsem_stats.n_sem_irq_server++;
+	    } else {
+		stm32h7_hsem_stats.n_sem_irq_inflight++;
+	    }
 	    h->inflight = 1;
-	    rtems_interrupt_server_request_submit(&h->request);
 	    h->n_irq_calls++;
-	    stm32h7_hsem_stats.n_sem_irq_server++;
 	    break;
 	}
     }

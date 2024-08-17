@@ -49,6 +49,7 @@ extern "C" {
 	uint32_t n_sem_irq_unused;
 	uint32_t n_sem_irq_direct;
 	uint32_t n_sem_irq_server;
+	uint32_t n_sem_irq_inflight;
 	uint32_t n_server_handler;
 	uint32_t n_add_direct_handler;
 	uint32_t n_add_server_handler;
