@@ -1,6 +1,8 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+
 /*
- * Copyright (c) 2018.
- * Amaan Cheval <amaan.cheval@gmail.com>
+ * Copyright (C) 2024 Matheus Pecoraro
+ * Copyright (c) 2018 Amaan Cheval <amaan.cheval@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -45,6 +47,7 @@ BEGIN_CODE
 
 .p2align  1
 PUBLIC(_CPU_Context_switch)
+PUBLIC(_CPU_Context_switch_no_return)
 
 /* save context argument */
 .set RUNCONTEXT_ARG,   REG_ARG0
@@ -52,39 +55,90 @@ PUBLIC(_CPU_Context_switch)
 .set HEIRCONTEXT_ARG,  REG_ARG1
 
 SYM(_CPU_Context_switch):
-  movq    RUNCONTEXT_ARG, rax  /* rax = running threads context */
+SYM(_CPU_Context_switch_no_return):
+  movq    RUNCONTEXT_ARG, r10   /* r10 = running threads context */
+  GET_SELF_CPU_CONTROL_R11      /* r11 = per CPU information */
 
   /* Fill up Context_Control struct */
   pushf
-  popq               (0 * CPU_SIZEOF_POINTER)(rax) /* pop rflags into context */
-  movq    rbx,       (1 * CPU_SIZEOF_POINTER)(rax)
-  movq    rsp,       (2 * CPU_SIZEOF_POINTER)(rax)
-  movq    rbp,       (3 * CPU_SIZEOF_POINTER)(rax)
-  movq    r12,       (4 * CPU_SIZEOF_POINTER)(rax)
-  movq    r13,       (5 * CPU_SIZEOF_POINTER)(rax)
-  movq    r14,       (6 * CPU_SIZEOF_POINTER)(rax)
-  movq    r15,       (7 * CPU_SIZEOF_POINTER)(rax)
+  popq               CPU_CONTEXT_CONTROL_EFLAGS(r10) /* pop rflags into context */
+  movq    rbx,       CPU_CONTEXT_CONTROL_RBX(r10)
+  movq    rsp,       CPU_CONTEXT_CONTROL_RSP(r10)
+  movq    rbp,       CPU_CONTEXT_CONTROL_RBP(r10)
+  movq    r12,       CPU_CONTEXT_CONTROL_R12(r10)
+  movq    r13,       CPU_CONTEXT_CONTROL_R13(r10)
+  movq    r14,       CPU_CONTEXT_CONTROL_R14(r10)
+  movq    r15,       CPU_CONTEXT_CONTROL_R15(r10)
 
-  movq    HEIRCONTEXT_ARG, rax /* rax = heir threads context */
+  movl    PER_CPU_ISR_DISPATCH_DISABLE(r11), %edx
+  movl    %edx, CPU_CONTEXT_CONTROL_ISR_DISPATCH_DISABLE(r10)
 
-restore:
-  movq  (1 * CPU_SIZEOF_POINTER)(rax), rbx
-  movq  (2 * CPU_SIZEOF_POINTER)(rax), rsp
+  movq    r10, r8              /* r8  = running threads context */
+  movq    HEIRCONTEXT_ARG, r10 /* r10 = heir threads context */
+
+#ifdef RTEMS_SMP
+  /*
+   * The executing thread no longer executes on this processor.  Switch
+   * the stack to the temporary interrupt stack of this processor.  Mark
+   * the context of the executing thread as not executing.
+   */
+  leaq    PER_CPU_INTERRUPT_FRAME_AREA + CPU_INTERRUPT_FRAME_SIZE(r11), rsp
+  movw    $0, CPU_CONTEXT_CONTROL_IS_EXECUTING(r8)
+
+.check_is_executing:
+  lock btsw $0, CPU_CONTEXT_CONTROL_IS_EXECUTING(r10) /* Indicator in carry flag */
+  jnc       .restore
+
+.get_potential_new_heir:
+  /* We may have a new heir */
+
+  /* Read the executing and heir */
+  movq    PER_CPU_OFFSET_EXECUTING(r11), r8
+  movq    PER_CPU_OFFSET_HEIR(r11), r9
+
+  /*
+   * Update the executing only if necessary to avoid cache line
+   * monopolization.
+   */
+  cmpq    r8, r9
+  je      .check_is_executing
+
+  /* Calculate the heir context pointer */
+  addq    r9, r10
+  subq    r8, r10
+
+  /* Update the executing */
+  movq    r9, PER_CPU_OFFSET_EXECUTING(r11)
+
+  jmp     .check_is_executing
+#endif
+
+.restore:
+  movl  CPU_CONTEXT_CONTROL_ISR_DISPATCH_DISABLE(r10), %edx
+  movl  %edx, PER_CPU_ISR_DISPATCH_DISABLE(r11)
+
+  movq  CPU_CONTEXT_CONTROL_RBX(r10), rbx
+  movq  CPU_CONTEXT_CONTROL_RSP(r10), rsp
 
   /*
    * We need to load rflags after rsp to avoid an interrupt while the ISR stack
    * is still being used during the initialization process
    */
-  pushq (0 * CPU_SIZEOF_POINTER)(rax)       /* push rflags */
-  popf                                      /* restore rflags */
+  pushq CPU_CONTEXT_CONTROL_EFLAGS(r10)       /* push rflags */
+  popf                                        /* restore rflags */
 
-  movq  (3 * CPU_SIZEOF_POINTER)(rax), rbp
-  movq  (4 * CPU_SIZEOF_POINTER)(rax), r12
-  movq  (5 * CPU_SIZEOF_POINTER)(rax), r13
-  movq  (6 * CPU_SIZEOF_POINTER)(rax), r14
-  movq  (7 * CPU_SIZEOF_POINTER)(rax), r15
+  movq  CPU_CONTEXT_CONTROL_RBP(r10), rbp
+  movq  CPU_CONTEXT_CONTROL_R12(r10), r12
+  movq  CPU_CONTEXT_CONTROL_R13(r10), r13
+  movq  CPU_CONTEXT_CONTROL_R14(r10), r14
+  movq  CPU_CONTEXT_CONTROL_R15(r10), r15
 
-  /* XXX: TLS - load GDT and refresh FS segment selector */
+  movq CPU_CONTEXT_CONTROL_FS(r10), rax
+  /* High bits in %edx and low bits in %eax */
+  movq rax, rdx
+  shrq $32, rdx
+  movl $FSBASE_MSR, %ecx
+  wrmsr
 
   ret
 
@@ -99,8 +153,9 @@ PUBLIC(_CPU_Context_restore)
 .set NEWCONTEXT_ARG,   REG_ARG0       /* context to restore argument */
 
 SYM(_CPU_Context_restore):
-  movq      NEWCONTEXT_ARG, rax  /* rax = running threads context */
-  jmp       restore
+  movq      NEWCONTEXT_ARG, r10  /* r10 = running threads context */
+  GET_SELF_CPU_CONTROL_R11       /* r11 = per CPU information */
+  jmp       .restore
 
 END_CODE
 END

@@ -1,5 +1,13 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 
+/**
+ * @file
+ *
+ * @ingroup shared_tod_mcp7940m_rtc
+ *
+ * @brief This file provides the interfaces of @ref shared_tod_mcp7940m_rtc.
+ */
+
 /*
  * Copyright (C) 2023 embedded brains GmbH & Co. KG
  *
@@ -28,25 +36,20 @@
 #ifndef LIBCHIP_MCP7940M_RTC_H
 #define LIBCHIP_MCP7940M_RTC_H
 
-#include <rtems.h>
-#include <rtems/thread.h>
-#include <libchip/rtc.h>
-#include <stdint.h>
+#include <libchip/i2c-rtc.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-extern const rtc_fns rtc_mcp7940m_fns;
-bool rtc_mcp7940m_probe(int minor);
-
-/*
- * It is expected, that the RTC can be accessed as a raw file. A pointer to a
- * constant string with the name of that device has to be passed to the table
- * initializer.
+/**
+ * @defgroup shared_tod_mcp7940m_rtc
  *
- * The MCP7940M uses an EEPROM-like interface. So you could for example use the
- * following initialization:
+ * @ingroup shared_tod_i2c_rtc
+ *
+ * @brief RTC driver for the MCP7940M
+ *
+ * To use this driver, use the following initialization:
  *
  * Define a context for the RTC somewhere:
  *
@@ -56,45 +59,34 @@ bool rtc_mcp7940m_probe(int minor);
  * Then you can use the following for the RTC_Table:
  *
  *   MCP7940M_RTC_TBL_ENTRY("/dev/rtc", &rtc_ctx)
+ *
+ * @{
  */
 
 struct mcp7940m_rtc {
-  /** Just initialize with RTEMS_MUTEX_INITIALIZER('mcp7940'). */
-  rtems_mutex mutex;
-
-  /** The path of the I2C bus device. */
-  const char *i2c_bus_path;
-
-  /** I2C address. */
-  uint8_t i2c_addr;
+  struct i2c_rtc_base base;
 
   /** True if a crystal should be used. False if an oscillator is connected. */
   bool crystal;
-
-  /** Whether the RTC has already been initialized. Used internally. */
-  bool initialized;
 };
 
+/** Hardware init. Used internally. */
+int mcp7940m_hw_init(struct i2c_rtc_base *base);
+
 #define MCP7940M_RTC_INITIALIZER(i2c_path, i2c_address, has_crystal) { \
-    .mutex = RTEMS_MUTEX_INITIALIZER("mcp7940m"), \
-    .i2c_bus_path = i2c_path, \
-    .i2c_addr = i2c_address, \
+    .base = I2C_RTC_INITIALIZER( \
+        i2c_path, \
+        i2c_address, \
+        0, \
+        "mcp7940", \
+        mcp7940m_hw_init), \
     .crystal = has_crystal, \
-    .initialized = false, \
   }
 
 #define MCP7940M_RTC_TBL_ENTRY(dev_name, mcp7940m_rtc_ctx) \
-  { \
-    .sDeviceName = dev_name, \
-    .deviceType = RTC_CUSTOM, \
-    .pDeviceFns = &rtc_mcp7940m_fns, \
-    .deviceProbe = rtc_mcp7940m_probe, \
-    .pDeviceParams = (void *)mcp7940m_rtc_ctx, \
-    .ulCtrlPort1 = 0, \
-    .ulDataPort = 0, \
-    .getRegister = NULL, \
-    .setRegister = NULL, \
-  }
+          I2C_RTC_TBL_ENTRY(dev_name, mcp7940m_rtc_ctx)
+
+/** @} */
 
 #ifdef __cplusplus
 }

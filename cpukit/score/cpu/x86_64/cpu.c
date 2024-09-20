@@ -5,8 +5,7 @@
  */
 
 /*
- * Copyright (c) 2018.
- * Amaan Cheval <amaan.cheval@gmail.com>
+ * Copyright (c) 2018 Amaan Cheval <amaan.cheval@gmail.com>
  *
  * Copyright (c) 1989-1999.
  * On-Line Applications Research Corporation (OAR).
@@ -59,16 +58,4 @@ void _CPU_Initialize(void)
   */
   asm volatile( "stmxcsr %0" : "=m"(_CPU_Null_fp_context.mxcsr) );
   asm volatile( "fstcw %0" : "=m"(_CPU_Null_fp_context.fpucw) );
-}
-
-void _CPU_Fatal_halt( uint32_t source, CPU_Uint32ptr error )
-{
-  ISR_Level level;
-
-  _CPU_ISR_Disable( level );
-  (void) level;
-
-  while ( true ) {
-    /* Do nothing */
-  }
 }

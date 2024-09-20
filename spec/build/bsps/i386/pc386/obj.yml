@@ -19,6 +19,7 @@ install:
   - bsps/i386/pc386/include/bsp/exar17d15x.h
   - bsps/i386/pc386/include/bsp/fb_default_mode.h
   - bsps/i386/pc386/include/bsp/fb_vesa.h
+  - bsps/i386/pc386/include/bsp/irq.h
   - bsps/i386/pc386/include/bsp/rtd316.h
   - bsps/i386/pc386/include/bsp/tblsizes.h
   - bsps/i386/pc386/include/bsp/vbe3.h
@@ -51,7 +52,6 @@ source:
 - bsps/i386/pc386/console/tty_drv.c
 - bsps/i386/pc386/console/uart.c
 - bsps/i386/pc386/console/uart_bus_pci.c
-- bsps/i386/pc386/start/bsp_fatal_halt.c
 - bsps/i386/pc386/start/bspcmdline.c
 - bsps/i386/pc386/start/bspgetworkarea.c
 - bsps/i386/pc386/start/bspidle.S
@@ -77,7 +77,6 @@ source:
 - bsps/shared/dev/rtc/rtc-support.c
 - bsps/shared/dev/serial/legacy-console.c
 - bsps/shared/irq/irq-default-handler.c
-- bsps/shared/start/bspfatal-default.c
 - bsps/shared/start/gettargethash-default.c
 - bsps/shared/start/mallocinitone.c
 - bsps/shared/start/sbrk.c

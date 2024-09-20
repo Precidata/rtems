@@ -47,11 +47,11 @@ const char rtems_test_name[] = "PSXAIO 4";
 #define WRONG_FD 404
 
 /* forward declarations to avoid warnings */
-struct aiocb *create_aiocb( int fd );
-void free_aiocb( struct aiocb *aiocbp );
-void notify( union sigval sig );
+static struct aiocb *create_aiocb( int fd );
+static void free_aiocb( struct aiocb *aiocbp );
+static void notify( union sigval sig );
 
-struct aiocb *create_aiocb( int fd )
+static struct aiocb *create_aiocb( int fd )
 {
   struct aiocb *aiocbp;
 
@@ -66,13 +66,13 @@ struct aiocb *create_aiocb( int fd )
   return aiocbp;
 }
 
-void free_aiocb( struct aiocb *aiocbp )
+static void free_aiocb( struct aiocb *aiocbp )
 {
   free( (void*) aiocbp->aio_buf );
   free( aiocbp );
 }
 
-void notify( union sigval sig )
+static void notify( union sigval sig )
 {
   kill( getpid(), sig.sival_int );
 }
@@ -144,6 +144,7 @@ void *POSIX_Init( void *argument )
 
   TEST_END();
 
+  free_aiocb( aiocbp );
   close( fd );
   rtems_test_exit( 0 );
 

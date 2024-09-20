@@ -1,8 +1,15 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 
 /**
- * @brief Stack Overflow Check User Extension Set
- */
+ * @file 
+ * 
+ * @ingroup libmisc_stackchk Stack Checker Mechanism 
+ * 
+ * @brief This file contains the Stack Overflow Check user extension set.
+ * 
+ * @note This extension set uses conditional compilation to account for 
+ *       stack growth direction.
+ */         
 
 /*
  *  COPYRIGHT (c) 1989-2024 On-Line Applications Research Corporation (OAR).
@@ -409,7 +416,6 @@ static inline void *Stack_check_Find_high_water_mark(
      * match pattern
      */
 
-    base += SANITY_PATTERN_SIZE_WORDS;
     for (ebase = base + length; base < ebase; base++)
       if (*base != U32_PATTERN)
         return (void *) base;
@@ -471,7 +477,7 @@ static bool Stack_check_Visit_thread(
 {
   Stack_check_Visitor *visitor;
   char                 name[ 22 ];
-  uintptr_t sp = _CPU_Context_Get_SP( &the_thread->Registers );
+  uintptr_t sp = (uintptr_t) _CPU_Context_Get_SP( &the_thread->Registers );
 
   visitor = arg;
   _Thread_Get_name( the_thread, name, sizeof( name ) );

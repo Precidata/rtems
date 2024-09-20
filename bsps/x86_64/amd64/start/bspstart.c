@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+
 /**
  * @file
  *
@@ -9,8 +11,7 @@
  */
 
 /*
- * Copyright (c) 2018.
- * Amaan Cheval <amaan.cheval@gmail.com>
+ * Copyright (c) 2018 Amaan Cheval <amaan.cheval@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,11 +35,13 @@
  * SUCH DAMAGE.
  */
 
+#include <acpi/acpi.h>
 #include <bsp.h>
 #include <bsp/bootcard.h>
 #include <libcpu/page.h>
 #include <bsp/irq-generic.h>
 #include <multiboot2impl.h>
+#include <rtems/score/assert.h>
 
 #if defined(BSP_USE_EFI_BOOT_SERVICES) && !defined(BSP_MULTIBOOT_SUPPORT)
 #error "RTEMS amd64efi BSP requires multiboot2 support!"
@@ -51,6 +54,8 @@ void bsp_start(void)
     if (!uefi_bootservices_running()) {
 #endif
         paging_init();
+        bool acpi_table_result = acpi_tables_initialize();
+        _Assert(acpi_table_result);
         bsp_interrupt_initialize();
 #ifdef BSP_MULTIBOOT_SUPPORT
     }

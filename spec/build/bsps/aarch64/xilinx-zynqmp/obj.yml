@@ -13,6 +13,7 @@ install:
   - bsps/aarch64/xilinx-zynqmp/include/bsp.h
 - destination: ${BSP_INCLUDEDIR}/bsp
   source:
+  - bsps/aarch64/xilinx-zynqmp/include/bsp/ecc.h
   - bsps/aarch64/xilinx-zynqmp/include/bsp/irq.h
   - bsps/aarch64/include/bsp/aarch64-mmu.h
 links: []
@@ -29,12 +30,10 @@ source:
 - bsps/aarch64/xilinx-zynqmp/start/bspstartmmu.c
 - bsps/shared/dev/btimer/btimer-cpucounter.c
 - bsps/shared/dev/getentropy/getentropy-cpucounter.c
-- bsps/shared/dev/irq/arm-gicv2.c
 - bsps/shared/dev/irq/arm-gicv2-zynqmp.c
 - bsps/shared/dev/serial/console-termios-init.c
 - bsps/shared/dev/serial/console-termios.c
 - bsps/shared/irq/irq-default-handler.c
-- bsps/shared/start/bspfatal-default.c
 - bsps/shared/start/bspreset-arm-psci.c
 - bsps/shared/start/gettargethash-default.c
 - bsps/shared/start/sbrk.c

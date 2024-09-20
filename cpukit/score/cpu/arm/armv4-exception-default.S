@@ -1,7 +1,15 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 
+/**
+ * @file
+ *
+ * @ingroup RTEMSScoreCPUARM
+ *
+ * @brief This source file contains the default exception handlers.
+ */
+
 /*
- * Copyright (c) 2013 embedded brains GmbH & Co. KG
+ * Copyright (c) 2013, 2024 embedded brains GmbH & Co. KG
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,7 +42,7 @@
 #ifdef ARM_MULTILIB_ARCH_V4
 
 #define MORE_CONTEXT_SIZE \
-  (ARM_EXCEPTION_FRAME_SIZE - ARM_EXCEPTION_FRAME_REGISTER_SP_OFFSET)
+  (ARM_EXCEPTION_FRAME_SIZE - ARM_EXCEPTION_FRAME_REGISTER_R8_OFFSET)
 
 .extern _ARM_Exception_default
 
@@ -42,8 +50,6 @@
 .globl _ARMV4_Exception_swi_default
 .globl _ARMV4_Exception_data_abort_default
 .globl _ARMV4_Exception_pref_abort_default
-.globl _ARMV4_Exception_reserved_default
-.globl _ARMV4_Exception_irq_default
 .globl _ARMV4_Exception_fiq_default
 
 .section ".text"
@@ -54,8 +60,9 @@ _ARMV4_Exception_undef_default:
 
 	/* Save context and load vector */
 	sub	sp, #MORE_CONTEXT_SIZE
-	stmdb	sp!, {r0-r12}
+	stmdb	sp!, {r0-r7}
 	mov	r4, #1
+	mov	r5, #ARM_PSR_I
 
 	b	save_more_context
 
@@ -63,8 +70,9 @@ _ARMV4_Exception_swi_default:
 
 	/* Save context and load vector */
 	sub	sp, #MORE_CONTEXT_SIZE
-	stmdb	sp!, {r0-r12}
+	stmdb	sp!, {r0-r7}
 	mov	r4, #2
+	mov	r5, #ARM_PSR_I
 
 	b	save_more_context
 
@@ -72,8 +80,9 @@ _ARMV4_Exception_pref_abort_default:
 
 	/* Save context and load vector */
 	sub	sp, #MORE_CONTEXT_SIZE
-	stmdb	sp!, {r0-r12}
+	stmdb	sp!, {r0-r7}
 	mov	r4, #3
+	mov	r5, #ARM_PSR_I
 
 	b	save_more_context
 
@@ -81,26 +90,9 @@ _ARMV4_Exception_data_abort_default:
 
 	/* Save context and load vector */
 	sub	sp, #MORE_CONTEXT_SIZE
-	stmdb	sp!, {r0-r12}
+	stmdb	sp!, {r0-r7}
 	mov	r4, #4
-
-	b	save_more_context
-
-_ARMV4_Exception_reserved_default:
-
-	/* Save context and load vector */
-	sub	sp, #MORE_CONTEXT_SIZE
-	stmdb	sp!, {r0-r12}
-	mov	r4, #5
-
-	b	save_more_context
-
-_ARMV4_Exception_irq_default:
-
-	/* Save context and load vector */
-	sub	sp, #MORE_CONTEXT_SIZE
-	stmdb	sp!, {r0-r12}
-	mov	r4, #6
+	mov	r5, #ARM_PSR_I
 
 	b	save_more_context
 
@@ -108,40 +100,28 @@ _ARMV4_Exception_fiq_default:
 
 	/* Save context and load vector */
 	sub	sp, #MORE_CONTEXT_SIZE
-	stmdb	sp!, {r0-r12}
+	stmdb	sp!, {r0-r7}
 	mov	r4, #7
-
-	/*
-	 * Don't enable FIQs yet. Set the FIQ disable bit in the SPSR
-	 * (which we'll load into the CPSR in save_more_context).
-	 */
-	mrs r2, spsr
-	orr r2, #ARM_PSR_F
-	msr spsr_c, r2
+	mov	r5, #(ARM_PSR_I | ARM_PSR_F)
 
 save_more_context:
 
-	/* Save more context */
+	/* Save more context, clear VFP context pointer */
 	mov	r2, lr
 	mrs	r3, spsr
 	mrs	r7, cpsr
-	orr	r5, r3, #ARM_PSR_I
-	bic	r5, #ARM_PSR_T
+	orr	r5, r5, r3
+	add	r6, sp, #ARM_EXCEPTION_FRAME_REGISTER_R8_OFFSET
+	add	sp, #ARM_EXCEPTION_FRAME_SIZE
 	msr	cpsr, r5
-	mov	r0, sp
-	mov	r1, lr
+	stmia	r6!, {r8-r14}
 	msr	cpsr, r7
+	sub	sp, #ARM_EXCEPTION_FRAME_SIZE
 	mov	r5, #0
-	add	r6, sp, #ARM_EXCEPTION_FRAME_REGISTER_SP_OFFSET
-	stm	r6, {r0-r5}
+	stm	r6, {r2-r5}
 
 	/* Argument for high level handler */
 	mov	r0, sp
-
-	/* Clear VFP context pointer */
-	add	r3, sp, #ARM_EXCEPTION_FRAME_VFP_CONTEXT_OFFSET
-	mov	r1, #0
-	str	r1, [r3]
 
 #ifdef ARM_MULTILIB_VFP
 	/* Ensure that the FPU is enabled */
@@ -153,7 +133,7 @@ save_more_context:
 	sub	sp, #(ARM_VFP_CONTEXT_SIZE + 8)
 	add	r4, sp, #8
 	bic	r4, r4, #7
-	str	r4, [r3]
+	str	r4, [r0, #ARM_EXCEPTION_FRAME_VFP_CONTEXT_OFFSET]
 	vmrs	r2, FPSCR
 	stmia	r4!, {r1-r2}
 	vstmia	r4!, {d0-d15}
@@ -174,9 +154,5 @@ save_more_context:
 	/* Call high level handler */
 	SWITCH_FROM_ARM_TO_THUMB	r1
 	bl	_ARM_Exception_default
-
-	/* Just in case */
-twiddle:
-	b	twiddle
 
 #endif /* ARM_MULTILIB_ARCH_V4 */

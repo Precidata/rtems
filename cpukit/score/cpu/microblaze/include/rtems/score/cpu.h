@@ -290,17 +290,6 @@ void _CPU_Context_Initialize(
 
 /* end of Context handler macros */
 
-/* Fatal Error manager macros */
-
-/* TODO */
-#define _CPU_Fatal_halt(_source, _error ) \
-        do { \
-          __asm__ volatile ( "sleep" ); \
-          for(;;) {} \
-        } while (0)
-
-/* end of Fatal Error manager macros */
-
 /* Bitfield handler macros */
 
 #define CPU_USE_GENERIC_BITFIELD_CODE TRUE
@@ -451,7 +440,7 @@ uint32_t _CPU_Counter_frequency( void );
 
 CPU_Counter_ticks _CPU_Counter_read( void );
 
-void *_CPU_Thread_Idle_body( uintptr_t ignored );
+RTEMS_NO_RETURN void *_CPU_Thread_Idle_body( uintptr_t ignored );
 
 void bsp_interrupt_dispatch( uint32_t source );
 

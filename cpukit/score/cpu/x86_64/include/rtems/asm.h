@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+
 /**
  * @file
  *
@@ -21,8 +23,7 @@
  *  notice.  This file is freely distributable as long as the source
  *  of the file is noted.  This file is:
  *
- *  COPYRIGHT (c) 2018.
- *  Amaan Cheval <amaan.cheval@gmail.com>
+ *  COPYRIGHT (c) 2018 Amaan Cheval <amaan.cheval@gmail.com>
  *
  *  COPYRIGHT (c) 1994-2006.
  *  On-Line Applications Research Corporation (OAR).
@@ -40,6 +41,7 @@
 #endif
 #include <rtems/score/cpuopts.h>
 #include <rtems/score/x86_64.h>
+#include <rtems/score/percpu.h>
 
 /**
  * @defgroup RTEMSScoreCPUx86-64ASM x86-64 Assembler Support
@@ -151,6 +153,77 @@
  */
 #define EXTERN(sym) .globl SYM (sym)
 
+#ifdef RTEMS_SMP
+/* REG32 must be the lower 32 bits of REG */
+.macro GET_CPU_INDEX REG REG32
+    .set LAPIC_ID,       0x20
+    .set LAPIC_ID_SHIFT, 24
+    movq amd64_lapic_base, \REG
+    movl LAPIC_ID(\REG), \REG32
+    shrq $LAPIC_ID_SHIFT, \REG                /* LAPIC_ID in REG */
+    movzbq amd64_lapic_to_cpu_map(\REG), \REG /* CPU ID in REG */
+.endm
+
+/* REG32 must be the lower 32 bits of REG */
+.macro GET_SELF_CPU_CONTROL REG REG32
+    GET_CPU_INDEX \REG \REG32
+    shlq $PER_CPU_CONTROL_SIZE_LOG2, \REG /* Calculate offset for CPU structure */
+    leaq _Per_CPU_Information(\REG), \REG /* Address of info for current CPU in REG */
+.endm
+#else
+.macro GET_CPU_INDEX REG REG32
+    movq $0, \REG
+.endm
+
+.macro GET_SELF_CPU_CONTROL REG REG32
+    leaq _Per_CPU_Information, \REG
+.endm
 #endif
+
+/* Couldn't find a better way to do this under the GNU as macro limitations */
+.macro GET_SELF_CPU_CONTROL_RAX
+    GET_SELF_CPU_CONTROL rax,%eax
+.endm
+.macro GET_SELF_CPU_CONTROL_RBX
+    GET_SELF_CPU_CONTROL rbx,%ebx
+.endm
+.macro GET_SELF_CPU_CONTROL_RCX
+    GET_SELF_CPU_CONTROL rcx,%ecx
+.endm
+.macro GET_SELF_CPU_CONTROL_RDX
+    GET_SELF_CPU_CONTROL rdx,%edx
+.endm
+.macro GET_SELF_CPU_CONTROL_RDI
+    GET_SELF_CPU_CONTROL rdi,%edi
+.endm
+.macro GET_SELF_CPU_CONTROL_RSI
+    GET_SELF_CPU_CONTROL rsi,%esi
+.endm
+.macro GET_SELF_CPU_CONTROL_R8
+    GET_SELF_CPU_CONTROL r8,%r8d
+.endm
+.macro GET_SELF_CPU_CONTROL_R9
+    GET_SELF_CPU_CONTROL r9,%r9d
+.endm
+.macro GET_SELF_CPU_CONTROL_R10
+    GET_SELF_CPU_CONTROL r10,%r10d
+.endm
+.macro GET_SELF_CPU_CONTROL_R11
+    GET_SELF_CPU_CONTROL r11,%r11d
+.endm
+.macro GET_SELF_CPU_CONTROL_R12
+    GET_SELF_CPU_CONTROL r12,%r12d
+.endm
+.macro GET_SELF_CPU_CONTROL_R13
+    GET_SELF_CPU_CONTROL r13,%r13d
+.endm
+.macro GET_SELF_CPU_CONTROL_R14
+    GET_SELF_CPU_CONTROL r14,%r14d
+.endm
+.macro GET_SELF_CPU_CONTROL_R15
+    GET_SELF_CPU_CONTROL r15,%r15d
+.endm
+
+#endif // _RTEMS_ASM_H
 
 /** @} */

@@ -1,6 +1,7 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+
 /*
- * Copyright (c) 2018.
- * Amaan Cheval <amaan.cheval@gmail.com>
+ * Copyright (c) 2018 Amaan Cheval <amaan.cheval@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -125,6 +126,11 @@ static inline void stub_io_wait(void)
   /* XXX: This likely won't be required on any modern boards, but this function
    * exists so it's easier to find all the places it may be used.
    */
+}
+
+static inline void amd64_spinwait(void)
+{
+  __asm__ volatile("pause" : : : "memory");
 }
 
 #endif /* !ASM */

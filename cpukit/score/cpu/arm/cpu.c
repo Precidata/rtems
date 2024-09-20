@@ -8,7 +8,7 @@
  * @brief This source file contains static assertions to ensure the consistency
  *   of interfaces used in C and assembler and it contains the ARM-specific
  *   implementation of _CPU_Initialize(), _CPU_ISR_Get_level(),
- *   _CPU_ISR_Set_level(), _CPU_Context_Initialize(), and _CPU_Fatal_halt().
+ *   _CPU_ISR_Set_level(), and _CPU_Context_Initialize().
  */
 
 /*
@@ -92,10 +92,36 @@ RTEMS_STATIC_ASSERT(
 );
 
 RTEMS_STATIC_ASSERT(
+  offsetof( CPU_Exception_frame, register_r8 )
+    == ARM_EXCEPTION_FRAME_REGISTER_R8_OFFSET,
+  ARM_EXCEPTION_FRAME_REGISTER_R8_OFFSET
+);
+
+RTEMS_STATIC_ASSERT(
   offsetof( CPU_Exception_frame, register_sp )
     == ARM_EXCEPTION_FRAME_REGISTER_SP_OFFSET,
   ARM_EXCEPTION_FRAME_REGISTER_SP_OFFSET
 );
+
+RTEMS_STATIC_ASSERT(
+  offsetof( CPU_Exception_frame, register_pc )
+    == ARM_EXCEPTION_FRAME_REGISTER_PC_OFFSET,
+  ARM_EXCEPTION_FRAME_REGISTER_PC_OFFSET
+);
+
+#if defined(ARM_MULTILIB_ARCH_V4)
+  RTEMS_STATIC_ASSERT(
+    offsetof( CPU_Exception_frame, register_cpsr )
+      == ARM_EXCEPTION_FRAME_REGISTER_CPSR_OFFSET,
+    ARM_EXCEPTION_FRAME_REGISTER_CPSR_OFFSET
+  );
+#elif defined(ARM_MULTILIB_ARCH_V6M) || defined(ARM_MULTILIB_ARCH_V7M)
+  RTEMS_STATIC_ASSERT(
+    offsetof( CPU_Exception_frame, register_xpsr )
+      == ARM_EXCEPTION_FRAME_REGISTER_XPSR_OFFSET,
+    ARM_EXCEPTION_FRAME_REGISTER_XPSR_OFFSET
+  );
+#endif
 
 RTEMS_STATIC_ASSERT(
   sizeof( ARM_VFP_context ) == ARM_VFP_CONTEXT_SIZE,
@@ -126,6 +152,7 @@ void _CPU_Context_Initialize(
   }
 }
 
+#if !defined(RTEMS_PARAVIRT)
 void _CPU_ISR_Set_level( uint32_t level )
 {
   uint32_t arm_switch_reg;
@@ -158,6 +185,7 @@ uint32_t _CPU_ISR_Get_level( void )
 
   return ( level & ARM_PSR_I ) != 0;
 }
+#endif /* RTEMS_PARAVIRT */
 
 void _CPU_Initialize( void )
 {
@@ -165,20 +193,3 @@ void _CPU_Initialize( void )
 }
 
 #endif /* ARM_MULTILIB_ARCH_V4 */
-
-void _CPU_Fatal_halt( uint32_t source, CPU_Uint32ptr error )
-{
-  ISR_Level level;
-
-  _CPU_ISR_Disable( level );
-  (void) level;
-
-  __asm__ volatile ("mov r0, %0\n"
-                : "=r" (error)
-                : "0" (error)
-                : "r0" );
-
-  while ( true ) {
-    /* Do nothing */
-  }
-}

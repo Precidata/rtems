@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2018.
- * Amaan Cheval <amaan.cheval@gmail.com>
+ * Copyright (c) 2018 Amaan Cheval <amaan.cheval@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,6 +37,8 @@ extern "C" {
 #define COM1_CLOCK_RATE (115200 * 16)
 
 #define EFLAGS_INTR_ENABLE 0x200
+
+#define FSBASE_MSR 0xC0000100
 
 #if DEBUG
 #define DBG_PRINTF(format, args...)             \

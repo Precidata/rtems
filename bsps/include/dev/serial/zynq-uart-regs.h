@@ -1,7 +1,9 @@
 /**
  * @file
- * @ingroup zynq_uart_regs
- * @brief UART register definitions.
+ *
+ * @ingroup RTEMSDeviceSerialZynq
+ *
+ * @brief This header file provides Zynq UART interfaces.
  */
 
 /*
@@ -32,9 +34,12 @@
  */
 
 /**
- * @defgroup zynq_uart_regs UART Register Definitions
- * @ingroup zynq_uart
- * @brief UART Register Definitions
+ * @defgroup RTEMSDeviceSerialZynq Zynq UART Support
+ *
+ * @ingroup RTEMSDeviceConsole
+ *
+ * @brief This group contains the Zynq UART support.
+ *
  * @{
  */
 
@@ -171,11 +176,35 @@ void zynq_uart_write_char_polled(volatile zynq_uart *regs, char c);
   */
 void zynq_uart_reset_tx_flush(volatile zynq_uart *regs);
 
-int zynq_cal_baud_rate(
-  uint32_t  baudrate,
-  uint32_t* brgr,
-  uint32_t* bauddiv,
-  uint32_t  modereg
+/**
+ * @brief Returns the Zynq UART input clock frequency in Hz.
+ */
+uint32_t zynq_uart_input_clock(void);
+
+/**
+ * @brief Calculates the clock and baud divisor of the best approximation of
+ *   the desired baud.
+ *
+ * The function tries to yield a sample set around 16 per RX-bit.
+ *
+ * @param desired_baud is the desired baud for an Zynq UART device.
+ *
+ * @param mode_clks is the value of the CLKS bit of the Zynq UART mode register.
+ *
+ * @param cd_ptr[out] is a reference to an uint32_t object.  The function
+ *   stores the calculated clock divisor to this object.
+ *
+ * @param bdiv_ptr[out] is a reference to an uint32_t object.  The function
+ *   stores the calculated baud divisor to this object.
+ *
+ * @return Returns the absolute error of the calculated baud to the desired
+ *   baud in Hz.
+ */
+uint32_t zynq_uart_calculate_baud(
+  uint32_t  desired_baud,
+  uint32_t  mode_clks,
+  uint32_t *cd_ptr,
+  uint32_t *bdiv_ptr
 );
 
 /** @} */

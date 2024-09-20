@@ -1,10 +1,11 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 
 /**
- * @brief Stack Checker Mechanism Details
- * 
- * This file contains the information necessary to install the stack 
- * checker mechanism.
+ * @file
+ *
+ * @ingroup libmisc_stackchk
+ *
+ * @brief This header file provides the Stack Checker API.
  */
 
 /*
@@ -38,7 +39,6 @@
 
 #include <rtems.h>
 #include <rtems/print.h>
-#include <rtems/score/threadimpl.h>
 
 /**
  *  @defgroup libmisc_stackchk Stack Checker Mechanism
@@ -214,7 +214,7 @@ void rtems_stack_checker_switch_extension(
  */
  
 void rtems_stack_checker_reporter_quiet(
-  const Thread_Control *running,
+  const rtems_tcb *running,
   bool pattern_ok
 );
 
@@ -228,7 +228,7 @@ void rtems_stack_checker_reporter_quiet(
  *                       still valid or not
  */
 void rtems_stack_checker_reporter_print_details(
-  const Thread_Control *running,
+  const rtems_tcb *running,
   bool pattern_ok
 );
 
@@ -261,7 +261,7 @@ void rtems_stack_checker_reporter_print_details(
  *                       still valid or not.
  */
 typedef void (*Stack_checker_Reporter_handler)(
-  const Thread_Control *running,
+  const rtems_tcb *running,
   bool pattern_ok
 );
 

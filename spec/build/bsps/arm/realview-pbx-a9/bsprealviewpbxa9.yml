@@ -46,7 +46,11 @@ links:
 - role: build-dependency
   uid: ../../linkcmds
 - role: build-dependency
+  uid: ../../dev/irq/objarmgicv2
+- role: build-dependency
   uid: ../../obj
+- role: build-dependency
+  uid: ../../objdevserialarmpl011
 - role: build-dependency
   uid: ../../objirq
 - role: build-dependency
@@ -74,13 +78,11 @@ source:
 - bsps/arm/shared/start/bsp-start-memcpy.S
 - bsps/shared/dev/btimer/btimer-cpucounter.c
 - bsps/shared/dev/getentropy/getentropy-cpucounter.c
-- bsps/shared/dev/irq/arm-gicv2.c
 - bsps/shared/dev/irq/arm-gicv2-get-attributes.c
 - bsps/shared/dev/serial/console-termios-init.c
 - bsps/shared/dev/serial/console-termios.c
 - bsps/shared/dev/serial/getserialmouseps2.c
 - bsps/shared/irq/irq-default-handler.c
-- bsps/shared/start/bspfatal-default.c
 - bsps/shared/start/gettargethash-default.c
 - bsps/shared/start/sbrk.c
 - bsps/shared/start/stackalloc.c

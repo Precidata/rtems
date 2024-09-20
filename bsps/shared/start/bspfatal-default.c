@@ -50,16 +50,6 @@ void bsp_fatal_extension(
   rtems_fatal_code code
 )
 {
-  rtems_interrupt_level level;
-
-  /*
-   * Make sure that interrupts don't interfere with the fatal error handling on
-   * this processor.  This reduces the likelihood to end up in a recursive
-   * fatal error handling sequence.
-   */
-  rtems_interrupt_local_disable( level );
-  (void) level;
-
   #if defined(RTEMS_SMP)
     if (
       source == RTEMS_FATAL_SOURCE_SMP &&
@@ -220,6 +210,6 @@ void bsp_fatal_extension(
    *  you must have meant to reset the board.
    */
   #if (BSP_PRESS_KEY_FOR_RESET) || (BSP_RESET_BOARD_AT_EXIT)
-    bsp_reset();
+    bsp_reset( source, code );
   #endif
 }
